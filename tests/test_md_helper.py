@@ -37,9 +37,9 @@ def test_is_divider():
     assert not is_divider('--')
     assert not is_divider('- - -')
     assert not is_divider('This is not a divider')
-    assert is_divider('***', type='*')
-    assert not is_divider('***', type='-')
-    assert not is_divider('* * *', type='*')
+    assert is_divider('***', type='*') is True
+    assert is_divider('***', type='-') is False
+    assert is_divider('* * *', type='*') is False
     assert is_divider('<->')
     assert is_divider('===')
 
