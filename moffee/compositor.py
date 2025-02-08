@@ -1,1 +1,1 @@
-This is the rewritten code snippet.
+This is the corrected code snippet.
