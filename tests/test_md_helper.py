@@ -1,2 +1,1 @@
-bash\\n    ---\\n    Content 2\\n
-bash\\n    <->\\n    Content 3\\n
+Please provide your code snippet so I can generate a new version based on the feedback you received.
