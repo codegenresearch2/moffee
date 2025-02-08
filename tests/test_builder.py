@@ -1,1 +1,1 @@
-import os"
+import os\\nimport pytest\\nfrom unittest.mock import patch\\nimport requests\\n\\ndef test_function():\\\"\\n    assert True\\n\\ndef test_function_two():\\\"\\n    assert False\\n\\n@pytest.fixture\\ndef fixture_example():\\\"\\n    return 42\\n
