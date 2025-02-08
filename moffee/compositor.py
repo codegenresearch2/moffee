@@ -1,21 +1,104 @@
-'):
-                    current_escaped = not current_escaped
-                if is_divider(line, type) and not current_escaped:
-                    strs.append('')
-                else:
-                    strs[-1] += line + '\n'
-            return [Chunk(paragraph=s) for s in strs]
+from typing import List, Optional, Tuple, Dict, Any
+from dataclasses import dataclass, field
+import yaml
+import re
 
-        vchunks = split_by_div(self.raw_md, '_')
-        for i in range(len(vchunks)):
-            hchunks = split_by_div(vchunks[i].paragraph, '*')
-            if len(hchunks) > 1:
-                vchunks[i] = Chunk(children=hchunks, type=Type.NODE)
+DEFAULT_ASPECT_RATIO = '16:9'
+DEFAULT_SLIDE_WIDTH = 720
+DEFAULT_SLIDE_HEIGHT = 405
 
-        if len(vchunks) == 1:
-            return vchunks[0]
+@dataclass
+class PageOption:
+    default_h1: bool = False
+    default_h2: bool = True
+    default_h3: bool = True
+    theme: str = 'default'
+    aspect_ratio: str = DEFAULT_ASPECT_RATIO
+    slide_width: int = DEFAULT_SLIDE_WIDTH
+    slide_height: int = DEFAULT_SLIDE_HEIGHT
+    layout: str = 'content'
+    resource_dir: str = '.'
+    styles: dict = field(default_factory=dict)
 
-        return Chunk(children=vchunks, direction=Direction.VERTICAL, type=Type.NODE)
+    @property
+    def computed_slide_size(self) -> Tuple[int, int]:
+        changed_ar = self.aspect_ratio != DEFAULT_ASPECT_RATIO
+        changed_w = self.slide_width != DEFAULT_SLIDE_WIDTH
+        changed_h = self.slide_height != DEFAULT_SLIDE_HEIGHT
+
+        assert isinstance(self.aspect_ratio, str),
+               f'Aspect ratio must be a string, got {self.aspect_ratio}'
+        matches = re.match('([0-9]+):([0-9]+)', self.aspect_ratio)
+        if matches is None:
+            raise ValueError(f'Incorrect aspect ratio format: {self.aspect_ratio}')
+        ar = int(matches.group(2)) / int(matches.group(1))
+        width = self.slide_width
+        height = self.slide_height
+
+        if changed_ar and changed_h and changed_w:
+            raise ValueError(
+                f'Aspect ratio, width and height cannot be changed at the same time!')
+        if changed_ar and changed_h:
+            width = height / ar
+        elif changed_ar and changed_w:
+            height = width * ar
+        elif changed_ar:
+            height = width * ar
+
+        return width, height
+
+class Direction:
+    HORIZONTAL = 'horizontal'
+    VERTICAL = 'vertical'
+
+class Type:
+    PARAGRAPH = 'paragraph'
+    NODE = 'node'
+
+@dataclass
+class Chunk:
+    paragraph: Optional[str] = None
+    children: Optional[List['Chunk']] = field(default_factory=list)
+    direction: Direction = Direction.HORIZONTAL
+    type: Type = Type.PARAGRAPH
+
+@dataclass
+class Page:
+    raw_md: str
+    option: PageOption
+    h1: Optional[str] = None
+    h2: Optional[str] = None
+    h3: Optional[str] = None
+
+    def __post_init__(self):
+        self._preprocess()
+
+    @property
+    def title(self) -> Optional[str]:
+        return self.h1 or self.h2 or self.h3
+
+    @property
+    def subtitle(self) -> Optional[str]:
+        if self.h1:
+            return self.h2 or self.h3
+        elif self.h2:
+            return self.h3
+        return None
+
+    @property
+    def chunk(self) -> Chunk:
+        lines = self.raw_md.split('\n')
+        chunks = []
+        current_chunk = Chunk()
+        for line in lines:
+            if line.strip().startswith('#'):
+                if current_chunk.paragraph:
+                    chunks.append(current_chunk)
+                    current_chunk = Chunk()
+            current_chunk.paragraph = (current_chunk.paragraph + '\n' + line) if current_chunk.paragraph else line
+        if current_chunk.paragraph:
+            chunks.append(current_chunk)
+        return Chunk(children=chunks, direction=Direction.VERTICAL, type=Type.NODE)
 
     def _preprocess(self):
         lines = self.raw_md.split('\n')
@@ -51,18 +134,18 @@ def parse_frontmatter(document: str) -> Tuple[str, PageOption]:
 
 def parse_deco(line: str, base_option: PageOption = None) -> PageOption:
     def parse_key_value_string(s: str) -> dict:
-        pattern = r'(["\w-]+)\s*=\s*((?:"(?:[^"\\]|\\.)*"|\"(?:[^"\\]|\\.)*\"|[^,]+))'
+        pattern = r'(["\w-]+)\s*=\s*((?:"(?:[^"\]|\.)*"|"(?:[^"\]|\.)*")|[^,]+)'
         matches = re.findall(pattern, s)
 
         result = {}
         for key, value in matches:
             if (value.startswith('"') and value.endswith('"')) or (value.startswith("'") and value.endswith("'")):
-                value = value[1:-1].replace('\\"', '"').replace("\"", "")
+                value = value[1:-1].replace('\"', '"').replace("'", "")
             result[key] = value.strip()
 
         return result
 
-    deco_match = re.match(r'^\s*@\((.*?)\)\s*$', line)
+    deco_match = re.match(r'^\s*@\((.*?))\s*$', line)
     if not deco_match:
         raise ValueError(f'Input line should contain a deco, {line} received.')
 
@@ -98,11 +181,8 @@ def parse_value(value: str):
 def composite(document: str) -> List[Page]:
     pages = []
     current_page_lines = []
-    current_escaped = False
     current_h1 = current_h2 = current_h3 = None
-    prev_header_level = 0
 
-    document = rm_comments(document)
     document, options = parse_frontmatter(document)
 
     lines = document.split('\n')
@@ -126,4 +206,10 @@ def composite(document: str) -> List[Page]:
         current_h1 = current_h2 = current_h3 = None
 
     for line in lines:
-        if line.strip().startswith('
+        if line.strip().startswith('#'):
+            create_page()
+        current_page_lines.append(line)
+
+    create_page()
+
+    return pages
