@@ -139,7 +139,7 @@ def parse_frontmatter(document: str) -> Tuple[str, PageOption]:
     return content, option
 
 
-def parse_deco(line: str, base_option: PageOption = None) -> PageOption:
+def parse_deco(line: str, base_option: Optional[PageOption] = None) -> PageOption:
     def parse_key_value_string(s: str) -> dict:
         pattern = r'([\w-]+)\s*=\s*((?:"(?:[^"]|\.)*"|"(?:[^"]|\.)*")|[^,]+)'
         matches = re.findall(pattern, s)
