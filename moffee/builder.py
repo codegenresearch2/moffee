@@ -81,8 +81,8 @@ def render_jinja2(document: str, template_dir) -> str:
             }
             for page in pages
         ],
-        "slide_width": options.slide_width,
-        "slide_height": options.slide_height,
+        "slide_width": options.width,
+        "slide_height": options.height,
     }
     return template.render(data)
 
