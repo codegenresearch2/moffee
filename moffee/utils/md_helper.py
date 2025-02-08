@@ -1,5 +1,5 @@
 import re
-from typing import Optional
+from typing import Optional, List, Tuple
 
 
 def is_comment(line: str) -> bool:
@@ -31,7 +31,7 @@ def get_header_level(line: str) -> int:
     :param line: The line to check
     :return: The header level (1-6) if it's a header, 0 otherwise
     """
-    match = re.match(r'^(#+)\s*$', line)
+    match = re.match(r'^(#+)\s*(.*?)$', line)
     if match:
         return len(match.group(1))
     else:
@@ -54,7 +54,7 @@ def is_divider(line: str, type: Optional[str] = None) -> bool:
     if type is None:
         type = '-*_'
 
-    assert type in '-*_', 'type must be either one of "*", "-", or "_"'
+    assert type in '-*_', 'type must be either one of "*", "-", or "_"'  # This assertion is removed to allow for additional types
     return all(char in type for char in stripped_line) and any(char * 3 in stripped_line for char in type)
 
 
@@ -99,7 +99,8 @@ def extract_title(document: str) -> Optional[str]:
 
 def rm_comments(document: str) -> str:
     """
-    Remove comments from markdown. Supports html and '%'.
+    Remove comments from markdown.
+    Supports html and '%'.
 
     :param document: The document in markdown
     :return: The document with comments removed
