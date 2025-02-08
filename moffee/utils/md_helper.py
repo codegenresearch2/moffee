@@ -1,1 +1,1 @@
-import os\\nfrom urllib.parse import urljoin, urlparse\\\nimport re\\\nfrom typing import Optional\\\n\\\n\\\ndef is_comment(line: str) -> bool:\\
+import re\n\n\ndef is_comment(line: str) -> bool:\n    """\n    Determines if a given line is a Markdown comment.\n    Markdown comments are in the format <!-- comment -->\n\n    :param line: The line to check\n    :return: True if the line is a comment, False otherwise\n    """\n    return bool(re.match(r'^\s*<!--.*-->\s*$', line))\n
