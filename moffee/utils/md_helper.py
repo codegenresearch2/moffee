@@ -1,5 +1,5 @@
 import re
-from typing import Optional, List, Tuple
+from typing import Optional
 
 
 def is_comment(line: str) -> bool:
@@ -33,7 +33,8 @@ def get_header_level(line: str) -> int:
     """
     match = re.match(r'^(#+)\s*(.*?)$', line)
     if match:
-        return len(match.group(1))
+        header_length = len(match.group(1))
+        return header_length if header_length <= 6 else 0
     else:
         return 0
 
@@ -54,7 +55,6 @@ def is_divider(line: str, type: Optional[str] = None) -> bool:
     if type is None:
         type = '-*_'
 
-    assert type in '-*_', 'type must be either one of "*", "-", or "_"'  # This assertion is removed to allow for additional types
     return all(char in type for char in stripped_line) and any(char * 3 in stripped_line for char in type)
 
 
