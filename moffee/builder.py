@@ -1,1 +1,1 @@
-def retrieve_structure(pages):"""Retrieve the structure of the document"""\""""
+from typing import List, Dict"
