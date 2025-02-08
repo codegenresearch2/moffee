@@ -57,7 +57,7 @@ def test_deco_with_spaces():
 
 
 def test_deco_with_quotes():
-    line = '@(layout = "split",length='34px')'
+    line = '@(layout = "split",length="34px")'
     option = parse_deco(line)
     assert option.layout == 'split'
     assert option.styles == {'length': '34px'}
