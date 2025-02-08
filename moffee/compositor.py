@@ -1,5 +1,5 @@
 from typing import List, Optional, Tuple, Dict, Any
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 import yaml
 import re
 from copy import deepcopy
@@ -55,13 +55,19 @@ class Type:
     PARAGRAPH = 'paragraph'
     NODE = 'node'
 
+class Alignment:
+    LEFT = 'left'
+    CENTER = 'center'
+    RIGHT = 'right'
+    JUSTIFY = 'justify'
+
 @dataclass
 class Chunk:
     paragraph: Optional[str] = None
     children: Optional[List['Chunk']] = field(default_factory=list)
     direction: Direction = Direction.HORIZONTAL
     type: Type = Type.PARAGRAPH
-    alignment: str = 'left'  # Added alignment attribute
+    alignment: Alignment = Alignment.LEFT
 
 @dataclass
 class Page:
@@ -135,4 +141,76 @@ def parse_frontmatter(document: str) -> Tuple[str, PageOption]:
 
 def parse_deco(line: str, base_option: PageOption = None) -> PageOption:
     def parse_key_value_string(s: str) -> dict:
-        pattern = r'([
+        pattern = r'([\w-]+)\s*=\s*((?:"(?:[^"]|\.)*"|"(?:[^"]|\.)*")|[^,]+)'
+        matches = re.findall(pattern, s)
+
+        result = {}
+        for key, value in matches:
+            if (value.startswith('"') and value.endswith('"')) or (value.startswith("'") and value.endswith("'")):
+                value = value[1:-1].replace('\"', "").replace("'", "")
+            result[key] = value.strip()
+
+        return result
+
+    deco_match = re.match(r'^\s*@\((.*?)\)\s*$', line)
+    if not deco_match:
+        raise ValueError(f'Input line should contain a deco, {line} received.')
+
+    deco_content = deco_match.group(1)
+    deco = parse_key_value_string(deco_content)
+
+    if base_option is None:
+        base_option = PageOption()
+
+    updated_option = deepcopy(base_option)
+
+    for key, value in deco.items():
+        if hasattr(updated_option, key):
+            setattr(updated_option, key, parse_value(value))
+        else:
+            updated_option.styles[key] = parse_value(value)
+
+    return updated_option
+
+
+def parse_value(value: str):
+    if value.lower() == 'true':
+        return True
+    elif value.lower() == 'false':
+        return False
+    elif value.isdigit():
+        return int(value)
+    elif value.replace('.', '', 1).isdigit():
+        return float(value)
+    return value
+
+
+# Additional imports and utility functions
+from typing import Callable
+
+# Utility functions
+def get_header_level(line: str) -> int:
+    match = re.match(r'^(#+)\s', line)
+    return len(match.group(1)) if match else 0
+
+
+def is_divider(line: str, type: str) -> bool:
+    divider_patterns = {
+        '-': r'^\s*[-*]+\s*$',
+        '_': r'^\s*_[_*]+_\s*$',
+        '+': r'^\s*+\+\+\+\s*$'  # Assuming this is correct, as it's not in the original feedback
+    }
+    pattern = divider_patterns.get(type)
+    return pattern and re.match(pattern, line.strip())
+
+
+def is_empty(line: str) -> bool:
+    return not line.strip()
+
+
+def rm_comments(line: str) -> str:
+    return re.sub(r'\s*#.*$', '', line)
+
+
+def contains_deco(line: str) -> bool:
+    return re.search(r'@\(.*\)', line) is not None
