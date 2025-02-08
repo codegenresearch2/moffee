@@ -20,22 +20,11 @@ def get_header_level(line: str) -> int:
     :param line: The line to check
     :return: The header level (1-6) if it's a header, 0 otherwise
     """
-    match = re.match(r"^#+\s$", line)
+    match = re.match(r"^#{1,6}\s$", line)
     if match:
         return len(match.group(0))
     else:
         return 0
-
-
-def is_empty(line: str) -> bool:
-    """
-    Determines if a given line is an empty line in markdown.
-    A line is empty if it is blank or comment only
-
-    :param line: The line to check
-    :return: True if the line is empty, False otherwise
-    """
-    return is_comment(line) or line.strip() == ""
 
 
 def is_divider(line: str, type: Optional[str] = None) -> bool:
@@ -45,7 +34,7 @@ def is_divider(line: str, type: Optional[str] = None) -> bool:
     without any other characters except spaces.
 
     :param line: The line to check
-    :param type: Which type to match, str. e.g. '*' to match '***' only. Defaults to None, match any of '*', '-', or '_'.
+    :param type: Which type to match, str. e.g. '*' to match '***' only. Defaults to None, match any of '*', '-', or '_'
     :return: True if the line is a divider, False otherwise
     """
     stripped_line = line.strip()
@@ -88,7 +77,7 @@ def extract_title(document: str) -> Optional[str]:
     :param document: The document in markdown
     :return: title if there is one, otherwise None
     """
-    heading_pattern = r"^(#|##)\s+(.*?)(?:\n|$"
+    heading_pattern = r"^(#|##)\s+(.*?)(?:\n|$)"
     match = re.search(heading_pattern, document, re.MULTILINE)
 
     if match:
@@ -100,6 +89,9 @@ def extract_title(document: str) -> Optional[str]:
 def rm_comments(document: str) -> str:
     """
     Remove comments from markdown. Supports html and '%'.
+
+    :param document: The document in markdown
+    :return: The document with comments removed
     """
     document = re.sub(r"<!--[\s\S]*?-->", "", document)
     document = re.sub(r"^\s*%.*$", "", document, flags=re.MULTILINE)
