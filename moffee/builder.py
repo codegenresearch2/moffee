@@ -20,32 +20,35 @@ def retrieve_structure(pages: List[Page]) -> dict:
         "page_meta": [],
         "headings": [],
     }
-    last_h1_idx = -1
-    last_h2_idx = -1
-    last_h3_idx = -1
+    current_h1 = None
+    current_h2 = None
+    current_h3 = None
 
     for i, page in enumerate(pages):
-        if page.h1:
+        if page.h1 and page.h1 != current_h1:
+            current_h1 = page.h1
+            current_h2 = None
+            current_h3 = None
             slide_struct["headings"].append({"level": 1, "content": page.h1, "page_ids": []})
-            last_h1_idx = len(slide_struct["headings"]) - 1
 
-        if page.h2:
+        if page.h2 and page.h2 != current_h2:
+            current_h2 = page.h2
+            current_h3 = None
             slide_struct["headings"].append({"level": 2, "content": page.h2, "page_ids": []})
-            last_h2_idx = len(slide_struct["headings"]) - 1
 
-        if page.h3:
+        if page.h3 and page.h3 != current_h3:
+            current_h3 = page.h3
             slide_struct["headings"].append({"level": 3, "content": page.h3, "page_ids": []})
-            last_h3_idx = len(slide_struct["headings"]) - 1
 
         if page.h1 or page.h2 or page.h3:
-            if last_h1_idx != -1:
-                slide_struct["headings"][last_h1_idx]["page_ids"].append(i)
-            if last_h2_idx != -1:
-                slide_struct["headings"][last_h2_idx]["page_ids"].append(i)
-            if last_h3_idx != -1:
-                slide_struct["headings"][last_h3_idx]["page_ids"].append(i)
+            if slide_struct["headings"][-1]["level"] == 1:
+                slide_struct["headings"][-1]["page_ids"].append(i)
+            elif slide_struct["headings"][-1]["level"] == 2:
+                slide_struct["headings"][-1]["page_ids"].append(i)
+            elif slide_struct["headings"][-1]["level"] == 3:
+                slide_struct["headings"][-1]["page_ids"].append(i)
 
-        slide_struct["page_meta"].append({"h1": page.h1, "h2": page.h2, "h3": page.h3})
+        slide_struct["page_meta"].append({"h1": current_h1, "h2": current_h2, "h3": current_h3})
 
     return slide_struct
 
