@@ -13,7 +13,24 @@ def template_dir(name='base'):
 @pytest.fixture(scope='module', autouse=True)
 def setup_test_env():
     doc = '''
-    ---\n    resource_dir: 'resources'\n    default_h1: true\n    theme: beam\n    background-color: 'red'\n    ---\n    # Test page\n    Other Pages\n    ![Image-1](image.png)\n    ---\n    Paragraph 1\n    ___\n    Paragraph 2\n    ***\n    Paragraph 3\n    ***\n    ![Image-2](image2.png)\n    '''
+    ---
+    resource_dir: 'resources'
+    default_h1: true
+    theme: beam
+    background-color: 'red'
+    ---
+    # Test page
+    Other Pages
+    ![Image-1](image.png)
+    ---
+    Paragraph 1
+    ___
+    Paragraph 2
+    ***
+    Paragraph 3
+    ***
+    ![Image-2](image2.png)
+    '''
     with tempfile.TemporaryDirectory() as temp_dir:
         # Setup test files and directories
         doc_path = os.path.join(temp_dir, 'test.md')
