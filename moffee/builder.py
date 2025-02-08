@@ -66,6 +66,7 @@ def render_jinja2(document: str, template_dir) -> str:
     pages = composite(document)
     title = extract_title(document) or "Untitled"
     slide_struct = retrieve_structure(pages)
+    options = read_options(document)
     data = {
         "title": title,
         "struct": slide_struct,
@@ -80,11 +81,14 @@ def render_jinja2(document: str, template_dir) -> str:
             }
             for page in pages
         ],
+        "slide_width": options.slide_width,
+        "slide_height": options.slide_height,
     }
     return template.render(data)
 
 
 def build(document_path: str, output_dir: str, template_dir: str, theme_dir: str = None):
+    """Render document, create output directories and write result html."
     with open(document_path) as f:
         document = f.read()
     asset_dir = os.path.join(output_dir, "assets")
