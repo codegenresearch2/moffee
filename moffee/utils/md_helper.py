@@ -2,15 +2,14 @@ import re
 from typing import Optional
 
 
-def is_comment(line: str) -> bool:
+def is_empty(line: str) -> bool:
     """
-    Determines if a given line is a Markdown comment.
-    Markdown comments are in the format <!-- comment -->
+    Determines if a given line or string is empty or consists only of whitespace.
 
     :param line: The line to check
-    :return: True if the line is a comment, False otherwise
+    :return: True if the line is empty or consists only of whitespace, False otherwise
     """
-    return bool(re.match(r"^\s*<!--.*-->\s*$", line))
+    return line.strip() == ""
 
 
 def get_header_level(line: str) -> int:
@@ -20,7 +19,7 @@ def get_header_level(line: str) -> int:
     :param line: The line to check
     :return: The header level (1-6) if it's a header, 0 otherwise
     """
-    match = re.match(r"^#{1,6}\s$", line)
+    match = re.match(r"^#+", line)
     if match:
         return len(match.group(0))
     else:
@@ -43,7 +42,7 @@ def is_divider(line: str, type: Optional[str] = None) -> bool:
     if type is None:
         type = '-*_'
 
-    assert type in '-*_', 'type must be either one of "*", "-", or "_"'  # Ensure type is one of the allowed values
+    assert type in '-*_', 'type must be either one of "*", "-", or "_"'
     return all(char in type for char in stripped_line) and any(char * 3 in stripped_line for char in type)
 
 
