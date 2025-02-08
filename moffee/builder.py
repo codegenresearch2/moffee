@@ -23,35 +23,29 @@ def retrieve_structure(pages: List[Page]) -> dict:
     current_h1 = None
     current_h2 = None
     current_h3 = None
-    last_h1_idx = -1
-    last_h2_idx = -1
-    last_h3_idx = -1
 
     for i, page in enumerate(pages):
         if page.h1 and page.h1 != current_h1:
             current_h1 = page.h1
             current_h2 = None
             current_h3 = None
-            last_h1_idx = len(slide_struct["headings"])
             slide_struct["headings"].append({"level": 1, "content": page.h1, "page_ids": []})
 
         if page.h2 and page.h2 != current_h2:
             current_h2 = page.h2
             current_h3 = None
-            last_h2_idx = len(slide_struct["headings"])
             slide_struct["headings"].append({"level": 2, "content": page.h2, "page_ids": []})
 
         if page.h3 and page.h3 != current_h3:
             current_h3 = page.h3
-            last_h3_idx = len(slide_struct["headings"])
             slide_struct["headings"].append({"level": 3, "content": page.h3, "page_ids": []})
 
         if page.h1 or page.h2 or page.h3:
-            slide_struct["headings"][last_h1_idx]["page_ids"].append(i)
+            slide_struct["headings"][-1]["page_ids"].append(i)
         if page.h2 or page.h3:
-            slide_struct["headings"][last_h2_idx]["page_ids"].append(i)
+            slide_struct["headings"][-1]["page_ids"].append(i)
         if page.h3:
-            slide_struct["headings"][last_h3_idx]["page_ids"].append(i)
+            slide_struct["headings"][-1]["page_ids"].append(i)
 
         slide_struct["page_meta"].append({"h1": current_h1, "h2": current_h2, "h3": current_h3})
 
@@ -81,8 +75,8 @@ def render_jinja2(document: str, template_dir) -> str:
             }
             for page in pages
         ],
-        "slide_width": options.width,
-        "slide_height": options.height,
+        "slide_width": options.computed_slide_size.width,
+        "slide_height": options.computed_slide_size.height,
     }
     return template.render(data)
 
