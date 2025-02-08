@@ -1,4 +1,2 @@
----
-Content 2
-***
-Content 3
+bash\n---\nContent 2\n
+bash\n***\nContent 3\n
