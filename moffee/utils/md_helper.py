@@ -20,7 +20,7 @@ def get_header_level(line: str) -> int:
     :param line: The line to check
     :return: The header level (1-6) if it's a header, 0 otherwise
     """
-    match = re.match(r"^(#{1,6})\s", line)
+    match = re.match(r"^(#{1,6})\s$", line)
     if match:
         return len(match.group(1))
     else:
@@ -38,23 +38,23 @@ def is_empty(line: str) -> bool:
     return is_comment(line) or line.strip() == ""
 
 
-def is_divider(line: str, type=None) -> bool:
+def is_divider(line: str, type: Optional[str] = None) -> bool:
     """
     Determines if a given line is a Markdown divider (horizontal rule).
     Markdown dividers are three or more hyphens, asterisks, or underscores,
     without any other characters except spaces.
 
     :param line: The line to check
-    :param type: Which type to match, str. e.g. "*" to match "***" only. Defaults to "", match any of "*", "-" and "_".
+    :param type: Which type to match, str. e.g. '*' to match '***' only. Defaults to None, match any of '*', '-', or '_'.
     :return: True if the line is a divider, False otherwise
     """
     stripped_line = line.strip()
     if len(stripped_line) < 3:
         return False
     if type is None:
-        type = "-*_"
+        type = '-*_'
 
-    assert type in "-*_", "type must be either '*', '-' or '_'"
+    assert type in '-*_', 'type must be either one of "*", "-", or "_"'  # Ensure type is one of the allowed values
     return all(char in type for char in stripped_line) and any(char * 3 in stripped_line for char in type)
 
 
@@ -97,11 +97,11 @@ def extract_title(document: str) -> Optional[str]:
         return None
 
 
-def rm_comments(document):
+def rm_comments(document: str) -> str:
     """
-    Remove comments from markdown. Supports html and "%%"
+    Remove comments from markdown. Supports html and '%'.
     """
     document = re.sub(r"<!--[\s\S]*?-->", "", document)
-    document = re.sub(r"^\s*%%.*$", "", document, flags=re.MULTILINE)
+    document = re.sub(r"^\s*%.*$", "", document, flags=re.MULTILINE)
 
     return document.strip()
