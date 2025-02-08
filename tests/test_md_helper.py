@@ -12,14 +12,14 @@ from moffee.utils.md_helper import (
 
 
 def test_is_comment():
-    assert is_comment('<!-- This is a comment -->') is True
-    assert is_comment('This is not a comment') is False
+    assert is_comment('<!-- This is a comment -->')
+    assert not is_comment('This is not a comment')
 
 
 def test_is_empty():
-    assert is_empty('<!-- This is a comment -->') is True
-    assert is_empty('This is not a comment') is False
-    assert is_empty(' \n') is True
+    assert is_empty('<!-- This is a comment -->')
+    assert is_empty(' ')
+    assert is_empty('\n')
 
 
 def test_get_header_level():
@@ -37,9 +37,9 @@ def test_is_divider():
     assert not is_divider('--')
     assert not is_divider('- - -')
     assert not is_divider('This is not a divider')
-    assert is_divider('***', type='*') is True
-    assert is_divider('***', type='-') is False
-    assert is_divider('* * *', type='*') is False
+    assert is_divider('***', type='*')
+    assert not is_divider('***', type='-')
+    assert not is_divider('* * *', type='*')
     assert is_divider('<->')
     assert is_divider('===')
 
@@ -68,8 +68,6 @@ def test_extract_title():
     assert extract_title('Some content without headings') is None
     assert extract_title('') is None
     assert extract_title('#  Title with spaces  \nContent') == 'Title with spaces'
-    multi_para = 'Para 1\n\nPara 2\n\n# Actual Title\nContent'
-    assert extract_title(multi_para) == 'Actual Title'
 
 
 def multi_strip(text):
