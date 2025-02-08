@@ -1,1 +1,1 @@
-import pytest\nfrom moffee.compositor import parse_deco, PageOption\n\n\ndef test_basic_deco():\n    line = '@(layout=split, background=blue)'\n    option = parse_deco(line)\n    assert option.layout == 'split'\n    assert option.styles == {'background': 'blue'}\\
+import pytest\\\nfrom moffee.compositor import parse_deco, PageOption\\\\\ndef test_basic_deco():\\\\\\n    line = '@(layout=split, background=blue)'\\\\\n    option = parse_deco(line)\\\\\n    assert option.layout == 'split'\\\\\n    assert option.styles == {'background': 'blue'}
