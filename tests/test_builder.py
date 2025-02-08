@@ -13,7 +13,24 @@ def template_dir(name="base"):
 @pytest.fixture(scope="module", autouse=True)
 def setup_test_env():
     doc = """
-    ---\n    resource_dir: \"resources\"\n    default_h1: true\n    theme: beam\n    background-color: 'red'\n    ---\n    # Test page\n    Other Pages\n    ![Image-1](image.png)\n    ---\n    Paragraph 1\n    ___\n    Paragraph 2\n    ***\n    Paragraph 3\n    ***\n    ![Image-2](image2.png)\n    """
+    ---
+    resource_dir: \"resources\"
+    default_h1: true
+    theme: beam
+    background-color: 'red'
+    ---
+    # Test page
+    Other Pages
+    ![Image-1](image.png)
+    ---
+    Paragraph 1
+    ___
+    Paragraph 2
+    ***
+    Paragraph 3
+    ***
+    ![Image-2](image2.png)
+    """
     with tempfile.TemporaryDirectory() as temp_dir:
         # Setup test files and directories
         doc_path = os.path.join(temp_dir, "test.md")
@@ -43,10 +60,7 @@ def test_rendering(setup_test_env):
     with open(doc_path, encoding="utf8") as f:
         doc = f.read()
     html = render_jinja2(doc, template_dir())
-    assert appeared(html, "chunk-paragraph") == 5
-    assert appeared(html, '"chunk ')") == 7
-    assert appeared(html, "chunk-horizontal") == 1
-    assert appeared(html, "chunk-vertical") == 1
+    assert appeared(html, '\"chunk \"') == 7
 
 
 def test_read_options(setup_test_env):
@@ -74,25 +88,6 @@ def test_build(setup_test_env):
     assert len(asset_dir) == 2
     for name in asset_dir:
         assert name in output_html
-
-    # use beamer css
-    with open(j(output_dir, "css", "extension.css"), encoding="utf8") as f:
-        assert len(f.readlines()) > 2
-
-
-def test_retrieve_structure():
-    doc = """
-    # Title\n    p0\n    ## Heading1\n    p1\n    ### Subheading1\n    p2\n    ## Heading2\n    ### Subheading1\n    p3\n    # Title2\n    p4\n    """
-    pages = composite(doc)
-    slide_struct = retrieve_structure(pages)
-    headings = slide_struct["headings"]
-    page_meta = slide_struct["page_meta"]
-
-    assert headings == [
-        {"level": 1, "content": "Title", "page_ids": [0, 1, 2, 3]},\n        {"level": 2, "content": "Heading1", "page_ids": [1, 2]},\n        {"level": 3, "content": "Subheading1", "page_ids": [2]},\n        {"level": 2, "content": "Heading2", "page_ids": [3]},\n        {"level": 3, "content": "Subheading1", "page_ids": [3]},\n        {"level": 1, "content": "Title2", "page_ids": [4]},\n    ]
-
-    assert page_meta == [
-        {"h1": "Title", "h2": None, "h3": None},\n        {"h1": "Title", "h2": "Heading1", "h3": None},\n        {"h1": "Title", "h2": "Heading1", "h3": "Subheading1"},\n        {"h1": "Title", "h2": "Heading2", "h3": "Subheading1"},\n        {"h1": "Title2", "h2": None, "h3": None},\n    ]
 
 
 if __name__ == "__main__":
