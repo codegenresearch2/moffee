@@ -2,6 +2,7 @@ from typing import List, Optional, Tuple, Dict, Any
 from dataclasses import dataclass, field
 import yaml
 import re
+from copy import deepcopy
 
 DEFAULT_ASPECT_RATIO = '16:9'
 DEFAULT_SLIDE_WIDTH = 720
@@ -26,8 +27,7 @@ class PageOption:
         changed_w = self.slide_width != DEFAULT_SLIDE_WIDTH
         changed_h = self.slide_height != DEFAULT_SLIDE_HEIGHT
 
-        assert isinstance(self.aspect_ratio, str),
-               f'Aspect ratio must be a string, got {self.aspect_ratio}'
+        assert isinstance(self.aspect_ratio, str), f'Aspect ratio must be a string, got {self.aspect_ratio}'
         matches = re.match('([0-9]+):([0-9]+)', self.aspect_ratio)
         if matches is None:
             raise ValueError(f'Incorrect aspect ratio format: {self.aspect_ratio}')
@@ -61,6 +61,7 @@ class Chunk:
     children: Optional[List['Chunk']] = field(default_factory=list)
     direction: Direction = Direction.HORIZONTAL
     type: Type = Type.PARAGRAPH
+    alignment: str = 'left'  # Added alignment attribute
 
 @dataclass
 class Page:
@@ -134,82 +135,4 @@ def parse_frontmatter(document: str) -> Tuple[str, PageOption]:
 
 def parse_deco(line: str, base_option: PageOption = None) -> PageOption:
     def parse_key_value_string(s: str) -> dict:
-        pattern = r'(["\w-]+)\s*=\s*((?:"(?:[^"\]|\.)*"|"(?:[^"\]|\.)*")|[^,]+)'
-        matches = re.findall(pattern, s)
-
-        result = {}
-        for key, value in matches:
-            if (value.startswith('"') and value.endswith('"')) or (value.startswith("'") and value.endswith("'")):
-                value = value[1:-1].replace('\"', '"').replace("'", "")
-            result[key] = value.strip()
-
-        return result
-
-    deco_match = re.match(r'^\s*@\((.*?))\s*$', line)
-    if not deco_match:
-        raise ValueError(f'Input line should contain a deco, {line} received.')
-
-    deco_content = deco_match.group(1)
-    deco = parse_key_value_string(deco_content)
-
-    if base_option is None:
-        base_option = PageOption()
-
-    updated_option = deepcopy(base_option)
-
-    for key, value in deco.items():
-        if hasattr(updated_option, key):
-            setattr(updated_option, key, parse_value(value))
-        else:
-            updated_option.styles[key] = parse_value(value)
-
-    return updated_option
-
-
-def parse_value(value: str):
-    if value.lower() == 'true':
-        return True
-    elif value.lower() == 'false':
-        return False
-    elif value.isdigit():
-        return int(value)
-    elif value.replace('.', '', 1).isdigit():
-        return float(value)
-    return value
-
-
-def composite(document: str) -> List[Page]:
-    pages = []
-    current_page_lines = []
-    current_h1 = current_h2 = current_h3 = None
-
-    document, options = parse_frontmatter(document)
-
-    lines = document.split('\n')
-
-    def create_page():
-        nonlocal current_page_lines, current_h1, current_h2, current_h3, options
-        if all(l.strip() == '' for l in current_page_lines):
-            return
-
-        raw_md = ''
-        local_option = deepcopy(options)
-        for line in current_page_lines:
-            if contains_deco(line):
-                local_option = parse_deco(line, local_option)
-            else:
-                raw_md += '\n' + line
-
-        page = Page(raw_md=raw_md, option=local_option, h1=current_h1, h2=current_h2, h3=current_h3)
-        pages.append(page)
-        current_page_lines = []
-        current_h1 = current_h2 = current_h3 = None
-
-    for line in lines:
-        if line.strip().startswith('#'):
-            create_page()
-        current_page_lines.append(line)
-
-    create_page()
-
-    return pages
+        pattern = r'([
