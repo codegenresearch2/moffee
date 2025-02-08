@@ -2,14 +2,26 @@ import re
 from typing import Optional
 
 
+def is_comment(line: str) -> bool:
+    """
+    Determines if a given line is a Markdown comment.
+    Markdown comments are in the format <!-- comment -->
+
+    :param line: The line to check
+    :return: True if the line is a comment, False otherwise
+    """
+    return bool(re.match(r'^\s*<!--.*-->\s*$', line))
+
+
 def is_empty(line: str) -> bool:
     """
     Determines if a given line or string is empty or consists only of whitespace.
+    Also considers lines that are comments as empty.
 
     :param line: The line to check
     :return: True if the line is empty or consists only of whitespace, False otherwise
     """
-    return line.strip() == ""
+    return line.strip() == "" or is_comment(line)
 
 
 def get_header_level(line: str) -> int:
@@ -19,9 +31,9 @@ def get_header_level(line: str) -> int:
     :param line: The line to check
     :return: The header level (1-6) if it's a header, 0 otherwise
     """
-    match = re.match(r"^#+", line)
+    match = re.match(r'^(#+)\s*$', line)
     if match:
-        return len(match.group(0))
+        return len(match.group(1))
     else:
         return 0
 
@@ -54,7 +66,7 @@ def contains_image(line: str) -> bool:
     :param line: The line to check
     :return: True if the line contains an image, False otherwise
     """
-    return bool(re.search(r"!\[.*?\]\(.*?\)", line))
+    return bool(re.search(r'!\[.*?\]\(.*?\)', line))
 
 
 def contains_deco(line: str) -> bool:
@@ -65,7 +77,7 @@ def contains_deco(line: str) -> bool:
     :param line: The line to check
     :return: True if the line contains a deco, False otherwise
     """
-    return bool(re.match(r"^\s*@\(.*?\)\s*$", line))
+    return bool(re.match(r'^\s*@\(.*?\)\s*$', line))
 
 
 def extract_title(document: str) -> Optional[str]:
@@ -76,7 +88,7 @@ def extract_title(document: str) -> Optional[str]:
     :param document: The document in markdown
     :return: title if there is one, otherwise None
     """
-    heading_pattern = r"^(#|##)\s+(.*?)(?:\n|$)"
+    heading_pattern = r'^(#|##)\s+(.*?)(?:\n|$)'
     match = re.search(heading_pattern, document, re.MULTILINE)
 
     if match:
@@ -92,7 +104,7 @@ def rm_comments(document: str) -> str:
     :param document: The document in markdown
     :return: The document with comments removed
     """
-    document = re.sub(r"<!--[\s\S]*?-->", "", document)
-    document = re.sub(r"^\s*%.*$", "", document, flags=re.MULTILINE)
+    document = re.sub(r'<!--[\s\S]*?-->', '', document)
+    document = re.sub(r'^\s*%.*$', '', document, flags=re.MULTILINE)
 
     return document.strip()
