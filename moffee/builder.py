@@ -1,1 +1,1 @@
-from typing import List, Dict"
+def short_function():\n    return 'short'
