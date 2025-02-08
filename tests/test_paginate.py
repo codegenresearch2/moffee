@@ -6,8 +6,8 @@ from moffee.compositor import composite, Direction, Type
 def sample_document():
     return \
 """
----resource_dir: resources\ndefault_h1: true\ndefault_h2: false\nlayout: split\ntheme: beam\nbackground-color: 'red'\n---"
-# Main Title\n\nOther Pages\n![Image-1](image.png)\n---\nParagraph 1\n===\nParagraph 2\n<->\nParagraph 3\n<->\n![Image-2](image2.png)"
+---resource_dir: resources\ndefault_h1: true\ndefault_h2: false\nlayout: split\ntheme: beam\nbackground-color: 'red'\n---\n# Main Title\n\nOther Pages\n![Image-1](image.png)\n---\nParagraph 1\n===\nParagraph 2\n<->\nParagraph 3\n<->\n![Image-2](image2.png)"
+"""
 
 
 def test_paginate_creates_correct_number_of_pages(sample_document):
