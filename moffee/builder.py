@@ -8,10 +8,8 @@ from moffee.utils.file_helper import redirect_paths, copy_assets, merge_director
 
 DEFAULT_SLIDE_DIMENSIONS = {"width": 1024, "height": 768}
 
-def read_options(document_path: str) -> PageOption:
-    """Read frontmatter options from the document path"""
-    with open(document_path, "r") as f:
-        document = f.read()
+def read_options(document: str) -> PageOption:
+    """Read frontmatter options from the document content"""
     _, options = parse_frontmatter(document)
     return options
 
@@ -54,7 +52,7 @@ def retrieve_structure(pages: List[Page]) -> dict:
 
     return {"page_meta": page_meta, "headings": headings}
 
-def render_jinja2(document: str, template_dir: str, output_dir: str) -> str:
+def render_jinja2(document: str, template_dir: str, output_dir: str):
     """Run jinja2 templating to create html"""
     env = Environment(loader=FileSystemLoader(template_dir))
     env.filters["markdown"] = md
@@ -75,8 +73,8 @@ def render_jinja2(document: str, template_dir: str, output_dir: str) -> str:
                 "chunk": page.chunk,
                 "layout": page.option.layout,
                 "styles": page.option.styles,
-                "width": options.width,
-                "height": options.height
+                "slide_width": options.width,
+                "slide_height": options.height
             }
             for page in pages
         ],
@@ -90,7 +88,7 @@ def build(document_path: str, output_dir: str, template_dir: str, theme_dir: str
         document = f.read()
     asset_dir = os.path.join(output_dir, "assets")
     merge_directories(template_dir, output_dir, theme_dir)
-    options = read_options(document_path)
+    options = read_options(document)
     output_html = render_jinja2(document, template_dir, output_dir)
     output_html = redirect_paths(output_html, document_path=document_path, resource_dir=options.resource_dir)
     output_html = copy_assets(output_html, asset_dir).replace(asset_dir, "assets")
