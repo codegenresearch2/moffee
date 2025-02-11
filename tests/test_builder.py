@@ -25,10 +25,13 @@ Other Pages
 
 ---
 Paragraph 1
+
 ---
 Paragraph 2
+
 ---
 Paragraph 3
+
 ---
 ![Image-2](image2.png)
     """
