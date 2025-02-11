@@ -420,4 +420,4 @@ def contains_deco(line: str) -> bool:
     :param line: The line to check
     :return: True if the line contains a deco, False otherwise
     """
-    return bool(re.match(r"^\s*@\(.*?\)
+    return bool(re.match(r"^\s*@\(.*?\)", line))
