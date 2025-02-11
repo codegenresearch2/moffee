@@ -19,9 +19,6 @@ class PageOption:
     resource_dir: str = "."
     styles: dict = field(default_factory=dict)
 
-    def __post_init__(self):
-        self.styles = deepcopy(self.styles)
-
     @property
     def aspect_ratio(self):
         return self.styles.get("aspect_ratio", DEFAULT_ASPECT_RATIO)
@@ -38,9 +35,12 @@ class PageOption:
     def computed_slide_size(self):
         ratio_parts = self.aspect_ratio.split(":")
         if len(ratio_parts) == 2 and all(part.isdigit() for part in ratio_parts):
-            width = self.slide_width
-            height = int(width * int(ratio_parts[1]) / int(ratio_parts[0]))
-            return (width, height)
+            try:
+                width = int(self.slide_width)
+                height = int(width * int(ratio_parts[1]) / int(ratio_parts[0]))
+                return (width, height)
+            except ValueError as e:
+                raise ValueError("Invalid aspect ratio format or dimensions") from e
         raise ValueError("Invalid aspect ratio format")
 
 class Direction:
@@ -118,70 +118,30 @@ class Page:
         lines = [l for l in lines if not (1 <= get_header_level(l) <= 3)]
         self.raw_md = "\n".join(lines).strip()
 
-def parse_frontmatter(document: str) -> Tuple[str, PageOption]:
-    document = document.strip()
-    front_matter = ""
-    content = document
+def rm_comments(document):
+    document = re.sub(r"<!--[\s\S]*?-->", "", document)
+    document = re.sub(r"^\s*%%.*$", "", document, flags=re.MULTILINE)
+    return document.strip()
 
-    if document.startswith("---"):
-        parts = document.split("---", 2)
-        if len(parts) >= 3:
-            front_matter = parts[1].strip()
-            content = parts[2].strip()
+def get_header_level(line):
+    match = re.match(r"^(#{1,6})\s", line)
+    if match:
+        return len(match.group(1))
+    else:
+        return 0
 
-    try:
-        yaml_data = yaml.safe_load(front_matter) if front_matter else {}
-    except yaml.YAMLError:
-        yaml_data = {}
-
-    option = PageOption()
-    for field in fields(option):
-        name = field.name
-        if name in yaml_data:
-            setattr(option, name, yaml_data.pop(name))
-    option.styles = yaml_data
-
-    return content, option
-
-def parse_deco(line: str, base_option: Optional[PageOption] = None) -> PageOption:
-    def rm_quotes(s):
-        if (s.startswith('"') and s.endswith('"')) or (
-            s.startswith("'") and s.endswith("'")
-        ):
-            return s[1:-1]
-        return s
-
-    deco_match = re.match(r"^\s*@\((.*?)\)\s*$", line)
-    if not deco_match:
-        raise ValueError(f"Input line should contain a deco, {line} received.")
-
-    deco_content = deco_match.group(1)
-    pairs = re.findall(r"([\w\-]+)\s*=\s*([^,]+)(?:,|$)", deco_content)
-    deco = {key.strip(): rm_quotes(value.strip()) for key, value in pairs}
-
-    if base_option is None:
-        base_option = PageOption()
-
-    updated_option = deepcopy(base_option)
-
-    for key, value in deco.items():
-        if hasattr(updated_option, key):
-            setattr(updated_option, key, parse_value(value))
-        else:
-            updated_option.styles[key] = parse_value(value)
-
-    return updated_option
-
-def parse_value(value: str):
-    if value.lower() == "true":
-        return True
-    elif value.lower() == "false":
+def is_divider(line, type="-"):
+    stripped_line = line.strip()
+    if len(stripped_line) < 3:
         return False
-    elif value.isdigit():
-        return int(value)
-    elif value.replace(".", "", 1).isdigit():
-        return float(value)
-    return value
+    if type is None:
+        type = "-*_"
+
+    assert type in "-*_", "type must be either '*', '-' or '_'"
+    return all(char in type for char in stripped_line) and any(char * 3 in stripped_line for char in type)
+
+def contains_deco(line):
+    return bool(re.match(r"^\s*@\(.*?)\s*$", line))
 
 def composite(document: str) -> List[Page]:
     pages: List[Page] = []
@@ -275,3 +235,68 @@ def composite(document: str) -> List[Page]:
             page.h3 = env_h3
 
     return pages
+
+def parse_frontmatter(document: str) -> Tuple[str, PageOption]:
+    document = document.strip()
+    front_matter = ""
+    content = document
+
+    if document.startswith("---"):
+        parts = document.split("---", 2)
+        if len(parts) >= 3:
+            front_matter = parts[1].strip()
+            content = parts[2].strip()
+
+    try:
+        yaml_data = yaml.safe_load(front_matter) if front_matter else {}
+    except yaml.YAMLError:
+        yaml_data = {}
+
+    option = PageOption()
+    for field in fields(option):
+        name = field.name
+        if name in yaml_data:
+            setattr(option, name, yaml_data.pop(name))
+    option.styles = yaml_data
+
+    return content, option
+
+def parse_deco(line: str, base_option: Optional[PageOption] = None) -> PageOption:
+    def rm_quotes(s):
+        if (s.startswith('"') and s.endswith('"')) or (
+            s.startswith("'") and s.endswith("'")
+        ):
+            return s[1:-1]
+        return s
+
+    deco_match = re.match(r"^\s*@\((.*?)\)\s*$", line)
+    if not deco_match:
+        raise ValueError(f"Input line should contain a deco, {line} received.")
+
+    deco_content = deco_match.group(1)
+    pairs = re.findall(r"([\w\-]+)\s*=\s*([^,]+)(?:,|$)", deco_content)
+    deco = {key.strip(): rm_quotes(value.strip()) for key, value in pairs}
+
+    if base_option is None:
+        base_option = PageOption()
+
+    updated_option = base_option.copy()
+
+    for key, value in deco.items():
+        if hasattr(updated_option, key):
+            setattr(updated_option, key, parse_value(value))
+        else:
+            updated_option.styles[key] = parse_value(value)
+
+    return updated_option
+
+def parse_value(value: str):
+    if value.lower() == "true":
+        return True
+    elif value.lower() == "false":
+        return False
+    elif value.isdigit():
+        return int(value)
+    elif value.replace(".", "", 1).isdigit():
+        return float(value)
+    return value
