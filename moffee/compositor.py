@@ -22,6 +22,20 @@ class PageOption:
     layout: str = "content"
     resource_dir: str = "."
     styles: dict = field(default_factory=dict)
+    aspect_ratio: str = "16:9"  # Added aspect ratio property
+    slide_width: int = 1280  # Added slide width property
+    slide_height: int = 720  # Added slide height property
+
+    @property
+    def computed_slide_size(self):
+        # Calculate slide size based on aspect ratio
+        if self.aspect_ratio:
+            ratio_parts = self.aspect_ratio.split(":")
+            if len(ratio_parts) == 2 and all(part.isdigit() for part in ratio_parts):
+                width = self.slide_width
+                height = int(width * int(ratio_parts[1]) / int(ratio_parts[0]))
+                return (width, height)
+        raise ValueError("Invalid aspect ratio format")
 
 
 class Direction:
