@@ -63,5 +63,19 @@ def test_computed_slide_size():
     assert option.width == 1024
     assert option.height == 768
 
+def test_computed_slide_size_aspect_ratio():
+    line = "@(width=1600, height=900)"
+    option = parse_deco(line)
+    assert option.width == 1600
+    assert option.height == 900
+    assert option.aspect_ratio == 1.78
+
+def test_computed_slide_size_default():
+    line = "@()"
+    option = parse_deco(line)
+    assert option.width == 1920
+    assert option.height == 1080
+    assert option.aspect_ratio == 1.78
+
 if __name__ == "__main__":
     pytest.main()
