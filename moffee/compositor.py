@@ -1,6 +1,5 @@
-from typing import List
-from dataclasses import dataclass, field, fields
 from typing import List, Optional, Tuple, Dict, Any
+from dataclasses import dataclass, field
 from copy import deepcopy
 import yaml
 import re
@@ -114,9 +113,9 @@ class Page:
         """
         Split raw_md into chunk tree
         Chunk tree branches when in-page divider is met.
-        - adjacent "<->"s create chunk with horizontal direction
-        - adjacent "===" create chunk with vertical direction
-        "===" possesses higher priority than "<->"
+        - adjacent "***"s create chunk with horizontal direction
+        - adjacent "___" create chunk with vertical direction
+        "___" possesses higher priority than "***"
 
         :return: Root of the chunk tree
         """
@@ -125,7 +124,7 @@ class Page:
             strs = [""]
             current_escaped = False
             for line in text.split("\n"):
-                if line.strip().startswith("```"):
+                if line.strip().startswith(""):
                     current_escaped = not current_escaped
                 if is_divider(line, type) and not current_escaped:
                     strs.append("\n")
@@ -133,12 +132,12 @@ class Page:
                     strs[-1] += line + "\n"
             return [Chunk(paragraph=s) for s in strs]
 
-        # collect "==="
-        vchunks = split_by_div(self.raw_md, "=")
-        # split by "<->" if possible
+        # collect "___"
+        vchunks = split_by_div(self.raw_md, "_")
+        # split by "***" if possible
         for i in range(len(vchunks)):
-            hchunks = split_by_div(vchunks[i].paragraph, "<")
-            if len(hchunks) > 1:  # found <->
+            hchunks = split_by_div(vchunks[i].paragraph, "*")
+            if len(hchunks) > 1:  # found ***
                 vchunks[i] = Chunk(children=hchunks, type=Type.NODE)
 
         if len(vchunks) == 1:
@@ -259,10 +258,9 @@ def composite(document: str) -> List[Page]:
 
     Splitting criteria:
     - New h1/h2/h3 header (except when following another header)
-    - "---" Divider (===, <->, +++ not count)
+    - "---" Divider (___, ***, +++ not count)
 
     :param document: Input markdown document as a string.
-    :param document_path: Optional string, will be used to redirect url in documents if given.
     :return: List of Page objects representing paginated slides
     """
     pages: List[Page] = []
@@ -305,7 +303,7 @@ def composite(document: str) -> List[Page]:
 
     for _, line in enumerate(lines):
         # update current env stack
-        if line.strip().startswith("```"):
+        if line.strip().startswith(""):
             current_escaped = not current_escaped
 
         header_level = get_header_level(line) if not current_escaped else 0
