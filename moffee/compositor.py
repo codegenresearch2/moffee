@@ -1,6 +1,6 @@
 import re
 import yaml
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field
 from typing import List, Optional, Tuple, Dict
 from copy import deepcopy
 
@@ -20,6 +20,7 @@ class PageOption:
     styles: dict = field(default_factory=dict)
     slide_width: int = DEFAULT_SLIDE_WIDTH
     slide_height: int = DEFAULT_SLIDE_HEIGHT
+    aspect_ratio: str = DEFAULT_ASPECT_RATIO
 
     @property
     def computed_slide_size(self) -> Tuple[int, int]:
@@ -35,27 +36,6 @@ class PageOption:
                 raise ValueError("Unsupported aspect ratio")
         else:
             return (self.slide_width, self.slide_height)
-
-    @property
-    def aspect_ratio(self) -> Optional[str]:
-        """
-        Returns the aspect ratio from the styles.
-        """
-        return self.styles.get("aspect_ratio")
-
-    @property
-    def dimensions(self) -> Optional[Tuple[int, int]]:
-        """
-        Returns the dimensions from the styles.
-        """
-        dim = self.styles.get("dimensions")
-        if dim:
-            try:
-                width, height = map(int, dim.split("x"))
-                return (width, height)
-            except ValueError:
-                raise ValueError("Invalid dimensions format")
-        return None
 
 class Direction:
     HORIZONTAL = "horizontal"
@@ -178,11 +158,11 @@ def parse_frontmatter(document: str) -> Tuple[str, PageOption]:
 
     # Create PageOption from YAML data
     option = PageOption()
-    for field in fields(option):
-        name = field.name
-        if name in yaml_data:
-            setattr(option, name, yaml_data.pop(name))
-    option.styles = yaml_data
+    for key, value in yaml_data.items():
+        if hasattr(option, key):
+            setattr(option, key, value)
+        else:
+            option.styles[key] = value
 
     return content, option
 
