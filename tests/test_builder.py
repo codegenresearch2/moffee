@@ -61,10 +61,10 @@ def test_rendering(setup_test_env):
     with open(doc_path, encoding="utf8") as f:
         doc = f.read()
     html = render_jinja2(doc, template_dir())
-    assert appeared(html, '"chunk-paragraph"') == 5
-    assert appeared(html, '"chunk ') == 7
-    assert appeared(html, '"chunk-horizontal"') == 3
-    assert appeared(html, '"chunk-vertical"') == 0
+    assert appeared(html, r'"chunk-paragraph"') == 5
+    assert appeared(html, r'"chunk "') == 7
+    assert appeared(html, r'"chunk-horizontal"') == 3
+    assert appeared(html, r'"chunk-vertical"') == 0
 
 
 def test_read_options(setup_test_env):
