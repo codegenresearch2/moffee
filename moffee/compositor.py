@@ -29,17 +29,53 @@ class PageOption:
     slide_width: int = DEFAULT_SLIDE_WIDTH
     slide_height: int = DEFAULT_SLIDE_HEIGHT
 
-    def __post_init__(self):
-        if self.styles is None:
-            self.styles = {}
+    @property
+    def computed_slide_size(self) -> Tuple[int, int]:
+        """
+        Computes the slide size based on the aspect ratio and dimensions.
+        """
+        if self.aspect_ratio == DEFAULT_ASPECT_RATIO:
+            return (self.slide_width, self.slide_height)
+        else:
+            aspect_parts = self.aspect_ratio.split(":")
+            if len(aspect_parts) != 2:
+                raise ValueError("Invalid aspect ratio format. Expected 'width:height'.")
+            try:
+                aspect_width = int(aspect_parts[0])
+                aspect_height = int(aspect_parts[1])
+            except ValueError:
+                raise ValueError("Aspect ratio components must be integers.")
+
+            if self.slide_width <= 0 or self.slide_height <= 0:
+                raise ValueError("Slide width and height must be positive integers.")
+
+            scale_factor = self.slide_width / self.slide_height
+            new_height = int(self.slide_width / (aspect_width / aspect_height))
+            new_width = int(new_height * (aspect_width / aspect_height))
+
+            return (new_width, new_height)
+
+class Direction:
+    HORIZONTAL = "horizontal"
+    VERTICAL = "vertical"
+
+class Type:
+    PARAGRAPH = "paragraph"
+    NODE = "node"
+
+class Alignment:
+    LEFT = "left"
+    CENTER = "center"
+    RIGHT = "right"
+    JUSTIFY = "justify"
 
 @dataclass
 class Chunk:
     paragraph: Optional[str] = None
-    children: List["Chunk"] = field(default_factory=list)
-    direction: str = "horizontal"
-    type: str = "paragraph"
-    alignment: str = "left"
+    children: Optional[List["Chunk"]] = field(default_factory=list)
+    direction: Direction = Direction.HORIZONTAL
+    type: Type = Type.PARAGRAPH
+    alignment: Alignment = Alignment.LEFT
 
 @dataclass
 class Page:
@@ -75,7 +111,6 @@ class Page:
 
         :return: Root of the chunk tree
         """
-
         def split_by_div(text, type) -> List[Chunk]:
             strs = [""]
             current_escaped = False
@@ -99,7 +134,7 @@ class Page:
         if len(vchunks) == 1:
             return vchunks[0]
 
-        return Chunk(children=vchunks, direction="vertical")
+        return Chunk(children=vchunks, direction=Direction.VERTICAL)
 
     def _preprocess(self):
         """
@@ -156,7 +191,6 @@ def parse_deco(line: str, base_option: Optional[PageOption] = None) -> PageOptio
     :param base_option: Optional PageOption to update with deco values
     :return: An updated PageOption
     """
-
     def rm_quotes(s):
         if (s.startswith('"') and s.endswith('"')) or (
             s.startswith("'") and s.endswith("'")
