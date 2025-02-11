@@ -1,7 +1,5 @@
-from typing import List
-from dataclasses import dataclass, field, fields
-from typing import List, Optional, Tuple, Dict, Any
-from copy import deepcopy
+from typing import List, Tuple, Optional
+from dataclasses import dataclass, field
 import yaml
 import re
 from moffee.utils.md_helper import (
@@ -12,6 +10,10 @@ from moffee.utils.md_helper import (
     contains_deco,
 )
 
+# Constants
+DEFAULT_ASPECT_RATIO = (16, 9)
+DEFAULT_WIDTH = 720
+DEFAULT_HEIGHT = 405
 
 @dataclass
 class PageOption:
@@ -22,32 +24,31 @@ class PageOption:
     layout: str = "content"
     resource_dir: str = "."
     styles: dict = field(default_factory=dict)
-    computed_slide_size: Tuple[int, int] = (720, 405)  # Default slide dimensions
+    aspect_ratio: Tuple[int, int] = DEFAULT_ASPECT_RATIO
+    width: int = DEFAULT_WIDTH
+    height: int = DEFAULT_HEIGHT
 
+    @property
     def computed_slide_size(self) -> Tuple[int, int]:
         """
         Computes the slide size based on the aspect ratio and dimensions.
         """
-        # Placeholder for actual computation logic
-        return self.computed_slide_size
-
+        aspect_width, aspect_height = self.aspect_ratio
+        return (self.width, self.height)
 
 class Direction:
     HORIZONTAL = "horizontal"
     VERTICAL = "vertical"
 
-
 class Type:
     PARAGRAPH = "paragraph"
     NODE = "node"
-
 
 class Alignment:
     LEFT = "left"
     CENTER = "center"
     RIGHT = "right"
     JUSTIFY = "justify"
-
 
 @dataclass
 class Chunk:
@@ -56,7 +57,6 @@ class Chunk:
     direction: Direction = Direction.HORIZONTAL
     type: Type = Type.PARAGRAPH
     alignment: Alignment = Alignment.LEFT
-
 
 @dataclass
 class Page:
@@ -131,7 +131,6 @@ class Page:
         lines = [l for l in lines if not (1 <= get_header_level(l) <= 3)]
         self.raw_md = "\n".join(lines).strip()
 
-
 def parse_frontmatter(document: str) -> Tuple[str, PageOption]:
     """
     Parse the YAML front matter in a given markdown document.
@@ -165,7 +164,6 @@ def parse_frontmatter(document: str) -> Tuple[str, PageOption]:
     option.styles = yaml_data
 
     return content, option
-
 
 def parse_deco(line: str, base_option: Optional[PageOption] = None) -> PageOption:
     """
@@ -205,7 +203,6 @@ def parse_deco(line: str, base_option: Optional[PageOption] = None) -> PageOptio
 
     return updated_option
 
-
 def parse_value(value: str):
     """Helper function to parse string values into appropriate types"""
     if value.lower() == "true":
@@ -217,7 +214,6 @@ def parse_value(value: str):
     elif value.replace(".", "", 1).isdigit():
         return float(value)
     return value
-
 
 def composite(document: str) -> List[Page]:
     """
