@@ -114,18 +114,15 @@ class Page:
         """
         Split raw_md into chunk tree
         Chunk tree branches when in-page divider is met.
-        - adjacent "<->"s create chunk with horizontal direction
-        - adjacent "===" create chunk with vertical direction
-        "===" possesses higher priority than "<->"
-
-        :return: Root of the chunk tree
+        - adjacent "==="s create chunk with vertical direction
+        - adjacent "<->" create chunk with horizontal direction
         """
 
         def split_by_div(text, type) -> List[Chunk]:
             strs = [""]
             current_escaped = False
             for line in text.split("\n"):
-                if line.strip().startswith("```"):
+                if line.strip().startswith(""):
                     current_escaped = not current_escaped
                 if is_divider(line, type) and not current_escaped:
                     strs.append("\n")
@@ -137,8 +134,8 @@ class Page:
         vchunks = split_by_div(self.raw_md, "=")
         # split by "<->" if possible
         for i in range(len(vchunks)):
-            hchunks = split_by_div(vchunks[i].paragraph, "<")
-            if len(hchunks) > 1:  # found <->
+            hchunks = split_by_div(vchunks[i].paragraph, "-")
+            if len(hchunks) > 1:  # found "<->"
                 vchunks[i] = Chunk(children=hchunks, type=Type.NODE)
 
         if len(vchunks) == 1:
@@ -259,7 +256,8 @@ def composite(document: str) -> List[Page]:
 
     Splitting criteria:
     - New h1/h2/h3 header (except when following another header)
-    - "---" Divider (===, <->, +++ not count)
+    - "===" Divider (for vertical chunking)
+    - "<->" Divider (for horizontal chunking)
 
     :param document: Input markdown document as a string.
     :param document_path: Optional string, will be used to redirect url in documents if given.
@@ -305,7 +303,7 @@ def composite(document: str) -> List[Page]:
 
     for _, line in enumerate(lines):
         # update current env stack
-        if line.strip().startswith("```"):
+        if line.strip().startswith(""):
             current_escaped = not current_escaped
 
         header_level = get_header_level(line) if not current_escaped else 0
@@ -320,7 +318,7 @@ def composite(document: str) -> List[Page]:
             # Check if the next line is also a header
             create_page()
 
-        if is_divider(line, type="-") and not current_escaped:
+        if is_divider(line, type="=") and not current_escaped:
             create_page()
             continue
 
