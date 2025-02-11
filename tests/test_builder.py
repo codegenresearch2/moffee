@@ -22,13 +22,13 @@ def setup_test_env():
     # Test page
     Other Pages
     ![Image-1](image.png)
-    ---
+    ===
     Paragraph 1
-    ___
+    <->
     Paragraph 2
-    ***
+    <->
     Paragraph 3
-    ***
+    <->
     ![Image-2](image2.png)
     """
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -62,8 +62,8 @@ def test_rendering(setup_test_env):
     html = render_jinja2(doc, template_dir())
     assert appeared(html, "chunk-paragraph") == 5
     assert appeared(html, '"chunk ') == 7
-    assert appeared(html, "chunk-horizontal") == 1
-    assert appeared(html, "chunk-vertical") == 1
+    assert appeared(html, "chunk-horizontal") == 3
+    assert appeared(html, "chunk-vertical") == 2
 
 
 def test_read_options(setup_test_env):
