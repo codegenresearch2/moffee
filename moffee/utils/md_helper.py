@@ -37,7 +37,7 @@ def is_empty(line: str) -> bool:
 def is_divider(line: str, type: Optional[str] = None) -> bool:
     """
     Determines if a given line is a Markdown divider (horizontal rule).
-    Markdown dividers are three or more hyphens, asterisks, or underscores,
+    Markdown dividers are three or more of the same character,
     without any other characters except spaces.
 
     :param line: The line to check
@@ -50,8 +50,6 @@ def is_divider(line: str, type: Optional[str] = None) -> bool:
     
     if type is None:
         type = "-*_"
-    
-    assert type in "-*_", "type must be either '-', '*' or '_'"
     
     if all(char in type for char in stripped_line) and any(char * 3 in stripped_line for char in type):
         return True
