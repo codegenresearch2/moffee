@@ -1,14 +1,5 @@
-from typing import List, Optional, Tuple, Dict, Any
-from dataclasses import dataclass, field
-import yaml
-import re
-from moffee.utils.md_helper import (
-    get_header_level,
-    is_divider,
-    is_empty,
-    rm_comments,
-    contains_deco,
-)
+from dataclasses import dataclass, fields
+from copy import deepcopy
 
 # Constants for default values
 DEFAULT_ASPECT_RATIO = "16:9"
@@ -23,16 +14,14 @@ class PageOption:
     theme: str = "default"
     layout: str = "content"
     resource_dir: str = "."
-    styles: dict = field(default_factory=dict)
+    styles: dict = None
 
-    @property
-    def computed_slide_size(self):
-        ratio_parts = self.aspect_ratio.split(":")
-        if len(ratio_parts) == 2 and all(part.isdigit() for part in ratio_parts):
-            width = self.slide_width
-            height = int(width * int(ratio_parts[1]) / int(ratio_parts[0]))
-            return (width, height)
-        raise ValueError("Invalid aspect ratio format")
+    def __post_init__(self):
+        if self.styles is None:
+            self.styles = {}
+
+    def copy(self):
+        return deepcopy(self)
 
     @property
     def aspect_ratio(self):
@@ -45,6 +34,15 @@ class PageOption:
     @property
     def slide_height(self):
         return self.styles.get("slide_height", DEFAULT_SLIDE_HEIGHT)
+
+    @property
+    def computed_slide_size(self):
+        ratio_parts = self.aspect_ratio.split(":")
+        if len(ratio_parts) == 2 and all(part.isdigit() for part in ratio_parts):
+            width = self.slide_width
+            height = int(width * int(ratio_parts[1]) / int(ratio_parts[0]))
+            return (width, height)
+        raise ValueError("Invalid aspect ratio format")
 
 class Direction:
     HORIZONTAL = "horizontal"
@@ -63,7 +61,7 @@ class Alignment:
 @dataclass
 class Chunk:
     paragraph: Optional[str] = None
-    children: Optional[List["Chunk"]] = field(default_factory=list)
+    children: Optional[List["Chunk"]] = None
     direction: Direction = Direction.HORIZONTAL
     type: Type = Type.PARAGRAPH
     alignment: Alignment = Alignment.LEFT
