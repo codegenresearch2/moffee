@@ -51,7 +51,7 @@ This is line 9.
 This is line 10.
 This is line 11.
 This is line 12.
-    """
+"""
 
 
 def test_paginate_creates_correct_number_of_pages(sample_document):
