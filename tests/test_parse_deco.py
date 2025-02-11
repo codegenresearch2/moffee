@@ -14,8 +14,9 @@ def test_empty_deco():
 
 def test_invalid_deco():
     line = "This is not a deco"
-    with pytest.raises(ValueError, match="Invalid decoration format"):
+    with pytest.raises(ValueError) as exc_info:
         parse_deco(line)
+    assert str(exc_info.value) == "Invalid decoration format"
 
 def test_deco_with_base_option():
     line = "@(layout=split, default_h1=true, custom_key=value)"
