@@ -198,7 +198,7 @@ def parse_frontmatter(document: str) -> Tuple[str, PageOption]:
 def parse_deco(line: str, base_option: Optional[PageOption] = None) -> PageOption:
     """
     Parses a deco (custom decorator) line and returns a dictionary of key-value pairs.
-    If base_option is provided, it updates the option with matching keys from the deco.
+    If base_option is provided, it updates the option with matching keys from the deco. Otherwise initialize an option.
 
     :param line: The line containing the deco
     :param base_option: Optional PageOption to update with deco values
