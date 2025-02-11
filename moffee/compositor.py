@@ -1,5 +1,5 @@
-from typing import Optional, Tuple, Dict, Any
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, fields, field
+from typing import Optional, List, Tuple, Dict, Any
 from copy import deepcopy
 import yaml
 import re
@@ -33,57 +33,13 @@ class PageOption:
         if self.styles is None:
             self.styles = {}
 
-    @property
-    def computed_slide_size(self) -> Tuple[int, int]:
-        """
-        Computes the slide size based on the aspect ratio and dimensions.
-        """
-        if self.aspect_ratio == DEFAULT_ASPECT_RATIO:
-            return (self.slide_width, self.slide_height)
-        else:
-            aspect_parts = self.aspect_ratio.split(":")
-            if len(aspect_parts) != 2:
-                raise ValueError("Invalid aspect ratio format. Expected format: 'width:height'.")
-            try:
-                aspect_width = int(aspect_parts[0])
-                aspect_height = int(aspect_parts[1])
-            except ValueError:
-                raise ValueError("Aspect ratio components must be integers.")
-
-            if self.slide_width <= 0 or self.slide_height <= 0:
-                raise ValueError("Slide width and height must be positive integers.")
-
-            # Calculate the new dimensions based on the aspect ratio
-            if aspect_width == 0 or aspect_height == 0:
-                raise ValueError("Aspect ratio components must not be zero.")
-
-            scale_factor = self.slide_width / self.slide_height
-            new_height = int(self.slide_width / (aspect_width / aspect_height))
-            new_width = int(new_height * (aspect_width / aspect_height))
-
-            return (new_width, new_height)
-
-class Direction:
-    HORIZONTAL = "horizontal"
-    VERTICAL = "vertical"
-
-class Type:
-    PARAGRAPH = "paragraph"
-    NODE = "node"
-
-class Alignment:
-    LEFT = "left"
-    CENTER = "center"
-    RIGHT = "right"
-    JUSTIFY = "justify"
-
 @dataclass
 class Chunk:
     paragraph: Optional[str] = None
-    children: Optional[List["Chunk"]] = None
-    direction: Direction = Direction.HORIZONTAL
-    type: Type = Type.PARAGRAPH
-    alignment: Alignment = Alignment.LEFT
+    children: List["Chunk"] = field(default_factory=list)
+    direction: str = "horizontal"
+    type: str = "paragraph"
+    alignment: str = "left"
 
 @dataclass
 class Page:
@@ -119,6 +75,7 @@ class Page:
 
         :return: Root of the chunk tree
         """
+
         def split_by_div(text, type) -> List[Chunk]:
             strs = [""]
             current_escaped = False
@@ -137,12 +94,12 @@ class Page:
         for i in range(len(vchunks)):
             hchunks = split_by_div(vchunks[i].paragraph, "*")
             if len(hchunks) > 1:  # found ***
-                vchunks[i] = Chunk(children=hchunks, type=Type.NODE)
+                vchunks[i] = Chunk(children=hchunks)
 
         if len(vchunks) == 1:
             return vchunks[0]
 
-        return Chunk(children=vchunks, direction=Direction.VERTICAL, type=Type.NODE)
+        return Chunk(children=vchunks, direction="vertical")
 
     def _preprocess(self):
         """
@@ -199,6 +156,7 @@ def parse_deco(line: str, base_option: Optional[PageOption] = None) -> PageOptio
     :param base_option: Optional PageOption to update with deco values
     :return: An updated PageOption
     """
+
     def rm_quotes(s):
         if (s.startswith('"') and s.endswith('"')) or (
             s.startswith("'") and s.endswith("'")
