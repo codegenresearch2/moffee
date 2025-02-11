@@ -1,3 +1,4 @@
+from typing import List
 import os
 from jinja2 import Environment, FileSystemLoader
 from moffee.compositor import Page, PageOption, composite, parse_frontmatter
@@ -70,7 +71,7 @@ def render_jinja2(document: str, template_dir: str) -> str:
     options = read_options(document)
 
     # Extract slide dimensions
-    slide_width, slide_height = getattr(options.computed_slide_size, 'width', 1280), getattr(options.computed_slide_size, 'height', 720)
+    width, height = getattr(options.computed_slide_size, 'width', 1280), getattr(options.computed_slide_size, 'height', 720)
 
     data = {
         "title": title,
@@ -83,13 +84,11 @@ def render_jinja2(document: str, template_dir: str) -> str:
                 "chunk": page.chunk,
                 "layout": page.option.layout,
                 "styles": page.option.styles,
-                "slide_width": slide_width,
-                "slide_height": slide_height,
+                "width": width,
+                "height": height,
             }
             for page in pages
         ],
-        "slide_width": slide_width,
-        "slide_height": slide_height,
     }
 
     return template.render(data)
@@ -103,7 +102,7 @@ def build(document_path: str, output_dir: str, template_dir: str, theme_dir: str
 
     merge_directories(template_dir, output_dir, theme_dir)
     options = read_options(document_path)
-    output_html = render_jinja2(document, output_dir)
+    output_html = render_jinja2(document, template_dir)
     output_html = redirect_paths(output_html, document_path=document_path, resource_dir=options.resource_dir)
     output_html = copy_assets(output_html, asset_dir).replace(asset_dir, "assets")
 
