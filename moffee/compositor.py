@@ -1,3 +1,6 @@
+from typing import List, Optional, Tuple, Dict, Any
+import yaml
+import re
 from dataclasses import dataclass, fields
 from copy import deepcopy
 
@@ -14,14 +17,7 @@ class PageOption:
     theme: str = "default"
     layout: str = "content"
     resource_dir: str = "."
-    styles: dict = None
-
-    def __post_init__(self):
-        if self.styles is None:
-            self.styles = {}
-
-    def copy(self):
-        return deepcopy(self)
+    styles: dict = field(default_factory=dict)
 
     @property
     def aspect_ratio(self):
@@ -61,7 +57,7 @@ class Alignment:
 @dataclass
 class Chunk:
     paragraph: Optional[str] = None
-    children: Optional[List["Chunk"]] = None
+    children: List["Chunk"] = field(default_factory=list)
     direction: Direction = Direction.HORIZONTAL
     type: Type = Type.PARAGRAPH
     alignment: Alignment = Alignment.LEFT
