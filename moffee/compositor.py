@@ -1,11 +1,13 @@
 import re
 import yaml
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from typing import List, Optional, Tuple, Dict
 from copy import deepcopy
 
 # Constants for default values
-DEFAULT_SLIDE_SIZE = (720, 405)
+DEFAULT_ASPECT_RATIO = "16:9"
+DEFAULT_SLIDE_WIDTH = 720
+DEFAULT_SLIDE_HEIGHT = 405
 
 @dataclass
 class PageOption:
@@ -16,22 +18,23 @@ class PageOption:
     layout: str = "content"
     resource_dir: str = "."
     styles: dict = field(default_factory=dict)
+    slide_width: int = DEFAULT_SLIDE_WIDTH
+    slide_height: int = DEFAULT_SLIDE_HEIGHT
 
     @property
     def computed_slide_size(self) -> Tuple[int, int]:
         """
         Computes the slide size based on the aspect ratio and dimensions.
         """
-        aspect_ratio = self.styles.get("aspect_ratio")
-        if aspect_ratio:
-            width, height = self.dimensions
-            if aspect_ratio == "16:9":
-                return (width, height * 9 // 16)
-            elif aspect_ratio == "4:3":
-                return (width, height * 3 // 4)
+        if self.aspect_ratio:
+            if self.aspect_ratio == "16:9":
+                return (self.slide_width, self.slide_width * 9 // 16)
+            elif self.aspect_ratio == "4:3":
+                return (self.slide_width, self.slide_width * 3 // 4)
             else:
                 raise ValueError("Unsupported aspect ratio")
-        return DEFAULT_SLIDE_SIZE
+        else:
+            return (self.slide_width, self.slide_height)
 
     @property
     def aspect_ratio(self) -> Optional[str]:
