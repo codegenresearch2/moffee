@@ -1,6 +1,6 @@
 import re
 import yaml
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field
 from typing import List, Optional, Tuple, Dict
 from copy import deepcopy
 
@@ -158,11 +158,11 @@ def parse_frontmatter(document: str) -> Tuple[str, PageOption]:
 
     # Create PageOption from YAML data
     option = PageOption()
-    for field in fields(option):
-        name = field.name
-        if name in yaml_data:
-            setattr(option, name, yaml_data.pop(name))
-    option.styles = yaml_data
+    for key, value in yaml_data.items():
+        if hasattr(option, key):
+            setattr(option, key, value)
+        else:
+            option.styles[key] = value
 
     return content, option
 
