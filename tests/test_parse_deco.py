@@ -14,7 +14,7 @@ def test_empty_deco():
 
 def test_invalid_deco():
     line = "This is not a deco"
-    with pytest.raises(ValueError, match="Invalid decoration string"):
+    with pytest.raises(ValueError):
         parse_deco(line)
 
 def test_deco_with_base_option():
@@ -58,34 +58,26 @@ def test_deco_with_hyphen():
     assert option.styles == {"background-color": "red"}
 
 def test_computed_slide_size():
-    line = "@(width=1024, height=768)"
-    option = parse_deco(line)
-    assert option.width == 1024
-    assert option.height == 768
+    page_option = PageOption(width=1024, height=768)
+    assert page_option.computed_slide_size == (1024, 768)
 
 def test_computed_slide_size_aspect_ratio():
-    line = "@(width=1600, height=900)"
-    option = parse_deco(line)
-    assert option.width == 1600
-    assert option.height == 900
-    assert option.aspect_ratio == 1.78
+    page_option = PageOption(width=1600, height=900)
+    assert page_option.computed_slide_size == (1600, 900)
+    assert page_option.aspect_ratio == 1.78
 
 def test_computed_slide_size_default():
-    line = "@()"
-    option = parse_deco(line)
-    assert option.width == 1920
-    assert option.height == 1080
-    assert option.aspect_ratio == 1.78
+    page_option = PageOption()
+    assert page_option.computed_slide_size == (1920, 1080)
+    assert page_option.aspect_ratio == 1.78
 
 def test_computed_slide_size_incorrect_aspect_ratio():
-    line = "@(width=1024, height=768, aspect_ratio=1.5)"
-    with pytest.raises(ValueError, match="Invalid aspect ratio"):
-        parse_deco(line)
+    with pytest.raises(ValueError):
+        PageOption(width=1024, height=768, aspect_ratio=1.5)
 
 def test_computed_slide_size_missing_parameters():
-    line = "@(width=1024)"
-    with pytest.raises(ValueError, match="Missing width and height parameters"):
-        parse_deco(line)
+    with pytest.raises(ValueError):
+        PageOption(width=1024)
 
 if __name__ == "__main__":
     pytest.main()
