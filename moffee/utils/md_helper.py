@@ -306,6 +306,7 @@ def extract_title(document: str) -> Optional[str]:
 def rm_comments(document: str) -> str:
     document = re.sub(r"<!--[\s\S]*?-->", "", document)
     document = re.sub(r"^\s*%%.*$", "", document, flags=re.MULTILINE)
+    document = re.sub(r"^\s*.*$", "", document, flags=re.MULTILINE)
     return document.strip()
 
 
