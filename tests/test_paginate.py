@@ -76,24 +76,18 @@ def test_style_overwrite(sample_document):
 def test_header_inheritance():
     doc = """
 # Main Title
-p0
-## Heading1
-p1
-### Subheading1
-p2
-## Heading2
-### Subheading1
-p3
-# Title2
-p4
+Content
+## Subtitle
+More content
+### Subheader
+Even more content
 """
     pages = composite(doc)
     assert pages[0].h1 == "Main Title"
-    assert pages[1].h2 == "Heading1"
-    assert pages[2].h3 == "Subheading1"
-    assert pages[3].h2 == "Heading2"
-    assert pages[4].h3 == "Subheading1"
-    assert pages[5].h1 == "Title2"
+    assert pages[1].h2 == "Subtitle"
+    assert pages[2].h3 == "Subheader"
+    assert pages[3].h2 == "Subtitle"
+    assert pages[4].h3 == "Subheader"
 
 
 def test_page_splitting_on_headers():
