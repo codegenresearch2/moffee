@@ -1,5 +1,6 @@
-from moffee.builder import read_options, render_jinja2, build
-from moffee.compositor import composite
+from typing import List
+from jinja2 import Environment, FileSystemLoader
+from moffee.compositor import Page, PageOption, composite, parse_frontmatter
 from moffee.markdown import md
 from moffee.utils.md_helper import extract_title
 from moffee.utils.file_helper import redirect_paths, copy_assets, merge_directories
@@ -51,7 +52,7 @@ def retrieve_structure(pages: List[Page]) -> dict:
 
     return {"page_meta": page_meta, "headings": headings}
 
-def render_jinja2(document: str, output_dir: str) -> str:
+def render_jinja2(document: str, template_dir: str) -> str:
     """Run jinja2 templating to create html"""
     env = Environment(loader=FileSystemLoader(template_dir))
     env.filters["markdown"] = md
@@ -60,7 +61,7 @@ def render_jinja2(document: str, output_dir: str) -> str:
     title = extract_title(document) or "Untitled"
     slide_struct = retrieve_structure(pages)
     options = read_options(document_path)
-    width, height = getattr(options.computed_slide_size, 'width', 1280), getattr(options.computed_slide_size, 'height', 720)
+    slide_width, slide_height = getattr(options.computed_slide_size, 'width', 1280), getattr(options.computed_slide_size, 'height', 720)
     data = {
         "title": title,
         "struct": slide_struct,
@@ -72,13 +73,13 @@ def render_jinja2(document: str, output_dir: str) -> str:
                 "chunk": page.chunk,
                 "layout": page.option.layout,
                 "styles": page.option.styles,
-                "width": width,
-                "height": height,
+                "width": slide_width,
+                "height": slide_height,
             }
             for page in pages
         ],
-        "width": width,
-        "height": height,
+        "slide_width": slide_width,
+        "slide_height": slide_height,
     }
     return template.render(data)
 
@@ -89,7 +90,7 @@ def build(document_path: str, output_dir: str, template_dir: str, theme_dir: str
     asset_dir = os.path.join(output_dir, "assets")
     merge_directories(template_dir, output_dir, theme_dir)
     options = read_options(document_path)
-    output_html = render_jinja2(document, output_dir)
+    output_html = render_jinja2(document, template_dir)
     output_html = redirect_paths(output_html, document_path=document_path, resource_dir=options.resource_dir)
     output_html = copy_assets(output_html, asset_dir).replace(asset_dir, "assets")
     output_file = os.path.join(output_dir, "index.html")
