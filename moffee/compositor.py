@@ -1,23 +1,36 @@
-from typing import List, Optional, Tuple, Dict, Any
-import yaml
+import copy
 import re
-from dataclasses import dataclass, fields, field
-from copy import deepcopy
+import yaml
+from typing import List, Optional, Tuple, Dict, Any
 
 # Constants for default values
 DEFAULT_ASPECT_RATIO = "16:9"
 DEFAULT_SLIDE_WIDTH = 1280
 DEFAULT_SLIDE_HEIGHT = 720
 
-@dataclass
+def is_empty(line: str) -> bool:
+    """
+    Check if a line is empty or contains only whitespace.
+    """
+    return line.strip() == ""
+
 class PageOption:
-    default_h1: bool = False
-    default_h2: bool = True
-    default_h3: bool = True
-    theme: str = "default"
-    layout: str = "content"
-    resource_dir: str = "."
-    styles: dict = field(default_factory=dict)
+    def __init__(self, default_h1: bool = False, default_h2: bool = True, default_h3: bool = True, 
+                 theme: str = "default", layout: str = "content", resource_dir: str = ".", 
+                 styles: dict = None):
+        self.default_h1 = default_h1
+        self.default_h2 = default_h2
+        self.default_h3 = default_h3
+        self.theme = theme
+        self.layout = layout
+        self.resource_dir = resource_dir
+        self.styles = styles if styles is not None else {}
+
+    def copy(self):
+        """
+        Create a shallow copy of the PageOption instance.
+        """
+        return copy.copy(self)
 
     @property
     def aspect_ratio(self):
@@ -57,24 +70,23 @@ class Alignment:
     RIGHT = "right"
     JUSTIFY = "justify"
 
-@dataclass
 class Chunk:
-    paragraph: Optional[str] = None
-    children: Optional[List["Chunk"]] = field(default_factory=list)
-    direction: Direction = Direction.HORIZONTAL
-    type: Type = Type.PARAGRAPH
-    alignment: Alignment = Alignment.LEFT
+    def __init__(self, paragraph: Optional[str] = None, children: Optional[List["Chunk"]] = None, 
+                 direction: Direction = Direction.HORIZONTAL, type: Type = Type.PARAGRAPH, 
+                 alignment: Alignment = Alignment.LEFT):
+        self.paragraph = paragraph
+        self.children = children if children is not None else []
+        self.direction = direction
+        self.type = type
+        self.alignment = alignment
 
-@dataclass
 class Page:
-    raw_md: str
-    option: PageOption
-    h1: Optional[str] = None
-    h2: Optional[str] = None
-    h3: Optional[str] = None
-
-    def __post_init__(self):
-        self._preprocess()
+    def __init__(self, raw_md: str, option: PageOption, h1: Optional[str] = None, h2: Optional[str] = None, h3: Optional[str] = None):
+        self.raw_md = raw_md
+        self.option = option
+        self.h1 = h1
+        self.h2 = h2
+        self.h3 = h3
 
     @property
     def title(self) -> Optional[str]:
@@ -113,11 +125,6 @@ class Page:
 
         return Chunk(children=vchunks, direction=Direction.VERTICAL, type=Type.NODE)
 
-    def _preprocess(self):
-        lines = self.raw_md.splitlines()
-        lines = [l for l in lines if not (1 <= get_header_level(l) <= 3)]
-        self.raw_md = "\n".join(lines).strip()
-
 def rm_comments(document):
     document = re.sub(r"<!--[\s\S]*?-->", "", document)
     document = re.sub(r"^\s*%%.*$", "", document, flags=re.MULTILINE)
@@ -130,7 +137,7 @@ def get_header_level(line):
     else:
         return 0
 
-def is_divider(line, type="-"):
+def is_divider(line, type=None):
     stripped_line = line.strip()
     if len(stripped_line) < 3:
         return False
@@ -157,7 +164,7 @@ def composite(document: str) -> List[Page]:
 
     def create_page():
         nonlocal current_page_lines, current_h1, current_h2, current_h3, options
-        if all(l.strip() == "" for l in current_page_lines):
+        if all(is_empty(l) for l in current_page_lines):
             return
 
         raw_md = ""
@@ -252,12 +259,13 @@ def parse_frontmatter(document: str) -> Tuple[str, PageOption]:
     except yaml.YAMLError:
         yaml_data = {}
 
-    option = PageOption()
-    for field in fields(option):
-        name = field.name
-        if name in yaml_data:
-            setattr(option, name, yaml_data.pop(name))
-    option.styles = yaml_data
+    option = PageOption(default_h1=yaml_data.get("default_h1", False),
+                        default_h2=yaml_data.get("default_h2", True),
+                        default_h3=yaml_data.get("default_h3", True),
+                        theme=yaml_data.get("theme", "default"),
+                        layout=yaml_data.get("layout", "content"),
+                        resource_dir=yaml_data.get("resource_dir", "."),
+                        styles=yaml_data.get("styles", {}))
 
     return content, option
 
