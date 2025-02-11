@@ -1,3 +1,4 @@
+from typing import List
 import os
 from jinja2 import Environment, FileSystemLoader
 from moffee.compositor import Page, PageOption, composite, parse_frontmatter
@@ -56,22 +57,14 @@ def retrieve_structure(pages: List[Page]) -> dict:
 
 def render_jinja2(document: str, template_dir: str) -> str:
     """Run jinja2 templating to create html"""
-    # Setup Jinja 2
     env = Environment(loader=FileSystemLoader(template_dir))
-
     env.filters["markdown"] = md
-
     template = env.get_template("index.html")
-
-    # Fill template
     pages = composite(document)
     title = extract_title(document) or "Untitled"
     slide_struct = retrieve_structure(pages)
     options = read_options(document)
-
-    # Extract slide dimensions
-    slide_width = options.slide_width
-    slide_height = options.slide_height
+    slide_width, slide_height = options.slide_width, options.slide_height
 
     data = {
         "title": title,
@@ -99,13 +92,11 @@ def build(document_path: str, output_dir: str, template_dir: str, theme_dir: str
     with open(document_path, "r") as f:
         document = f.read()
     asset_dir = os.path.join(output_dir, "assets")
-
     merge_directories(template_dir, output_dir, theme_dir)
     options = read_options(document_path)
     output_html = render_jinja2(document, template_dir)
     output_html = redirect_paths(output_html, document_path=document_path, resource_dir=options.resource_dir)
     output_html = copy_assets(output_html, asset_dir).replace(asset_dir, "assets")
-
     output_file = os.path.join(output_dir, "index.html")
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(output_html)
