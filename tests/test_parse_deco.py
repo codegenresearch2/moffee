@@ -14,9 +14,8 @@ def test_empty_deco():
 
 def test_invalid_deco():
     line = "This is not a deco"
-    with pytest.raises(ValueError) as exc_info:
+    with pytest.raises(ValueError, match="Invalid decoration string"):
         parse_deco(line)
-    assert str(exc_info.value) == "Invalid decoration string"
 
 def test_deco_with_base_option():
     line = "@(layout=split, default_h1=true, custom_key=value)"
@@ -80,12 +79,12 @@ def test_computed_slide_size_default():
 
 def test_computed_slide_size_incorrect_aspect_ratio():
     line = "@(width=1024, height=768, aspect_ratio=1.5)"
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Invalid aspect ratio"):
         parse_deco(line)
 
 def test_computed_slide_size_missing_parameters():
     line = "@(width=1024)"
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Missing width and height parameters"):
         parse_deco(line)
 
 if __name__ == "__main__":
