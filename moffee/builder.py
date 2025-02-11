@@ -15,7 +15,6 @@ def read_options(document_path) -> PageOption:
     _, options = parse_frontmatter(document)
     return options
 
-
 def retrieve_structure(pages: List[Page]) -> dict:
     current_h1 = None
     current_h2 = None
@@ -55,20 +54,15 @@ def retrieve_structure(pages: List[Page]) -> dict:
 
     return {"page_meta": page_meta, "headings": headings}
 
-
 def render_jinja2(document: str, template_dir) -> str:
     """Run jinja2 templating to create html"""
-    # Setup Jinja 2
     env = Environment(loader=FileSystemLoader(template_dir))
-
     env.filters["markdown"] = md
-
     template = env.get_template("index.html")
-
-    # Fill template
     pages = composite(document)
     title = extract_title(document) or "Untitled"
     slide_struct = retrieve_structure(pages)
+    options = read_options(document)
 
     data = {
         "title": title,
@@ -81,7 +75,8 @@ def render_jinja2(document: str, template_dir) -> str:
                 "chunk": page.chunk,
                 "layout": page.option.layout,
                 "styles": page.option.styles,
-                **DEFAULT_SLIDE_DIMENSIONS
+                "width": options.slide_width,
+                "height": options.slide_height
             }
             for page in pages
         ],
@@ -89,23 +84,16 @@ def render_jinja2(document: str, template_dir) -> str:
 
     return template.render(data)
 
-
-def build(
-    document_path: str, output_dir: str, template_dir: str, theme_dir: str = None
-):
+def build(document_path: str, output_dir: str, template_dir: str, theme_dir: str = None):
     """Render document, create output directories and write result html."""
     with open(document_path) as f:
         document = f.read()
     asset_dir = os.path.join(output_dir, "assets")
-
     merge_directories(template_dir, output_dir, theme_dir)
     options = read_options(document_path)
     output_html = render_jinja2(document, output_dir)
-    output_html = redirect_paths(
-        output_html, document_path=document_path, resource_dir=options.resource_dir
-    )
+    output_html = redirect_paths(output_html, document_path=document_path, resource_dir=options.resource_dir)
     output_html = copy_assets(output_html, asset_dir).replace(asset_dir, "assets")
-
-    output_file = os.path.join(output_dir, f"index.html")
+    output_file = os.path.join(output_dir, "index.html")
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(output_html)
