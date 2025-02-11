@@ -98,7 +98,21 @@ def test_build(setup_test_env):
         assert len(f.readlines()) > 2
 
 
-def test_retrieve_structure(pages: List[Page]):
+def test_retrieve_structure():
+    doc = """
+# Title
+p0
+## Heading1
+p1
+### Subheading1
+p2
+## Heading2
+### Subheading1
+p3
+# Title2
+p4
+"""
+    pages = composite(doc)
     slide_struct = retrieve_structure(pages)
     headings = slide_struct["headings"]
     page_meta = slide_struct["page_meta"]
