@@ -1,3 +1,4 @@
+from typing import List
 import os
 from jinja2 import Environment, FileSystemLoader
 from moffee.compositor import Page, PageOption, composite, parse_frontmatter
@@ -6,8 +7,10 @@ from moffee.utils.md_helper import extract_title
 from moffee.utils.file_helper import redirect_paths, copy_assets, merge_directories
 
 
-def read_options(document: str) -> PageOption:
-    """Read frontmatter options from the document content"""
+def read_options(document_path: str) -> PageOption:
+    """Read frontmatter options from the document path"""
+    with open(document_path, "r") as f:
+        document = f.read()
     _, options = parse_frontmatter(document)
     return options
 
@@ -90,7 +93,7 @@ def build(document_path: str, output_dir: str, template_dir: str, theme_dir: str
         document = f.read()
     asset_dir = os.path.join(output_dir, "assets")
     merge_directories(template_dir, output_dir, theme_dir)
-    options = read_options(document)
+    options = read_options(document_path)
     output_html = render_jinja2(document, template_dir)
     output_html = redirect_paths(output_html, document_path=document_path, resource_dir=options.resource_dir)
     output_html = copy_assets(output_html, asset_dir).replace(asset_dir, "assets")
