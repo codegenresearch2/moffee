@@ -76,19 +76,24 @@ def test_style_overwrite(sample_document):
 def test_header_inheritance():
     doc = """
 # Main Title
-Content
-## Subtitle
-More content
-### Subheader
-Even more content
-    """
+p0
+## Heading1
+p1
+### Subheading1
+p2
+## Heading2
+### Subheading1
+p3
+# Title2
+p4
+"""
     pages = composite(doc)
     assert pages[0].h1 == "Main Title"
-    assert pages[1].h1 is None
-    assert pages[1].h2 == "Subtitle"
-    assert pages[2].h1 is None
-    assert pages[2].h2 == "Subtitle"
-    assert pages[2].h3 == "Subheader"
+    assert pages[1].h2 == "Heading1"
+    assert pages[2].h3 == "Subheading1"
+    assert pages[3].h2 == "Heading2"
+    assert pages[4].h3 == "Subheading1"
+    assert pages[5].h1 == "Title2"
 
 
 def test_page_splitting_on_headers():
@@ -99,7 +104,7 @@ Content 1
 Content 2
 # New Header 1
 Content 3
-    """
+"""
     pages = composite(doc)
     assert len(pages) == 3
     assert pages[0].h1 == "Header 1"
@@ -112,9 +117,9 @@ def test_page_splitting_on_dividers():
 Content 1
 ---
 Content 2
-<->
+***
 Content 3
-    """
+"""
     pages = composite(doc)
     assert len(pages) == 2
 
@@ -122,13 +127,13 @@ Content 3
 def test_escaped_area_paging():
     doc = """
 Content 1
-```bash
+bash
 ---
 Content 2
-```
-<->
+
+***
 Content 3
-    """
+"""
     pages = composite(doc)
     assert len(pages) == 1
 
@@ -138,11 +143,11 @@ def test_escaped_area_chunking():
 Content 1
 ---
 Content 2
-```bash
-<->
+bash
+***
 Content 3
-```
-    """
+
+"""
     pages = composite(doc)
     assert len(pages) == 2
     assert len(pages[1].chunk.children) == 0
@@ -156,7 +161,7 @@ def test_title_and_subtitle():
 #### Heading4
 ### Heading3
 Content
-    """
+"""
     pages = composite(doc)
     assert len(pages) == 2
     assert pages[0].title == "Title"
@@ -187,7 +192,7 @@ Paragraph 2
 Paragraph 3
 
 Paragraph 4
-    """
+"""
     pages = composite(doc)
     chunk = pages[0].chunk
     assert chunk.type == Type.PARAGRAPH
@@ -198,10 +203,10 @@ Paragraph 4
 def test_chunking_vertical():
     doc = """
 Paragraph 1
-===
+___
 
 Paragraph 2
-    """
+"""
     pages = composite(doc)
     chunk = pages[0].chunk
     assert chunk.type == Type.NODE
@@ -213,15 +218,14 @@ Paragraph 2
 def test_chunking_horizontal():
     doc = """
 Paragraph 1
-<->
+***
 
 Paragraph 2
-<->
-    """
+"""
     pages = composite(doc)
     chunk = pages[0].chunk
     assert chunk.type == Type.NODE
-    assert len(chunk.children) == 3
+    assert len(chunk.children) == 2
     assert chunk.direction == Direction.HORIZONTAL
     assert chunk.children[0].type == Type.PARAGRAPH
 
@@ -231,13 +235,13 @@ def test_chunking_hybrid():
 Other Pages
 ---
 Paragraph 1
-===
+___
 Paragraph 2
-<->
+***
 Paragraph 3
-<->
+***
 Paragraph 4
-    """
+"""
     pages = composite(doc)
     assert len(pages) == 2
     chunk = pages[1].chunk
@@ -257,7 +261,7 @@ def test_empty_lines_handling():
 # Title
 
 Content with empty line above
-    """
+"""
     pages = composite(doc)
     assert len(pages[0].chunk.children) == 0
     assert pages[0].option.styles == {}
