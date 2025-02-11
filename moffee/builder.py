@@ -1,4 +1,3 @@
-from typing import List
 import os
 from jinja2 import Environment, FileSystemLoader
 from moffee.compositor import Page, PageOption, composite, parse_frontmatter
@@ -8,9 +7,18 @@ from moffee.utils.file_helper import redirect_paths, copy_assets, merge_director
 
 DEFAULT_SLIDE_DIMENSIONS = {"width": 1024, "height": 768}
 
-def read_options(document_content: str) -> PageOption:
-    """Read frontmatter options from the document content"""
-    _, options = parse_frontmatter(document_content)
+def read_options(document_path: str) -> PageOption:
+    """Read frontmatter options from the document path"""
+    with open(document_path, "r") as f:
+        document = f.read()
+    _, options = parse_frontmatter(document)
+    # Ensure default values are set correctly
+    if not hasattr(options, 'default_h1'):
+        options.default_h1 = True
+    if not hasattr(options, 'default_h2'):
+        options.default_h2 = False
+    if not hasattr(options, 'default_h3'):
+        options.default_h3 = False
     return options
 
 def retrieve_structure(pages: List[Page]) -> dict:
@@ -73,8 +81,8 @@ def render_jinja2(document: str, template_dir: str) -> str:
                 "chunk": page.chunk,
                 "layout": page.option.layout,
                 "styles": page.option.styles,
-                "width": options.slide_width,
-                "height": options.slide_height
+                "width": options.width,
+                "height": options.height
             }
             for page in pages
         ],
@@ -88,7 +96,7 @@ def build(document_path: str, output_dir: str, template_dir: str, theme_dir: str
         document = f.read()
     asset_dir = os.path.join(output_dir, "assets")
     merge_directories(template_dir, output_dir, theme_dir)
-    options = read_options(document)
+    options = read_options(document_path)
     output_html = render_jinja2(document, template_dir)
     output_html = redirect_paths(output_html, document_path=document_path, resource_dir=options.resource_dir)
     output_html = copy_assets(output_html, asset_dir).replace(asset_dir, "assets")
