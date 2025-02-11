@@ -1,5 +1,5 @@
 from typing import List, Optional, Tuple, Dict, Any
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from copy import deepcopy
 import yaml
 import re
