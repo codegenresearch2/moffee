@@ -1,5 +1,5 @@
-from typing import List, Tuple, Optional
-from dataclasses import dataclass, field
+from dataclasses import dataclass, fields
+from copy import deepcopy
 import yaml
 import re
 from moffee.utils.md_helper import (
@@ -11,9 +11,9 @@ from moffee.utils.md_helper import (
 )
 
 # Constants
-DEFAULT_ASPECT_RATIO = (16, 9)
-DEFAULT_WIDTH = 720
-DEFAULT_HEIGHT = 405
+DEFAULT_ASPECT_RATIO = "16:9"
+DEFAULT_SLIDE_WIDTH = 720
+DEFAULT_SLIDE_HEIGHT = 405
 
 @dataclass
 class PageOption:
@@ -23,18 +23,44 @@ class PageOption:
     theme: str = "default"
     layout: str = "content"
     resource_dir: str = "."
-    styles: dict = field(default_factory=dict)
-    aspect_ratio: Tuple[int, int] = DEFAULT_ASPECT_RATIO
-    width: int = DEFAULT_WIDTH
-    height: int = DEFAULT_HEIGHT
+    styles: dict = None
+    aspect_ratio: str = DEFAULT_ASPECT_RATIO
+    slide_width: int = DEFAULT_SLIDE_WIDTH
+    slide_height: int = DEFAULT_SLIDE_HEIGHT
+
+    def __post_init__(self):
+        if self.styles is None:
+            self.styles = {}
 
     @property
-    def computed_slide_size(self) -> Tuple[int, int]:
+    def computed_slide_size(self):
         """
         Computes the slide size based on the aspect ratio and dimensions.
         """
-        aspect_width, aspect_height = self.aspect_ratio
-        return (self.width, self.height)
+        if self.aspect_ratio == DEFAULT_ASPECT_RATIO:
+            return (self.slide_width, self.slide_height)
+        else:
+            aspect_parts = self.aspect_ratio.split(":")
+            if len(aspect_parts) != 2:
+                raise ValueError("Invalid aspect ratio format. Expected format: 'width:height'.")
+            try:
+                aspect_width = int(aspect_parts[0])
+                aspect_height = int(aspect_parts[1])
+            except ValueError:
+                raise ValueError("Aspect ratio components must be integers.")
+
+            if self.slide_width <= 0 or self.slide_height <= 0:
+                raise ValueError("Slide width and height must be positive integers.")
+
+            # Calculate the new dimensions based on the aspect ratio
+            if aspect_width == 0 or aspect_height == 0:
+                raise ValueError("Aspect ratio components must not be zero.")
+
+            scale_factor = self.slide_width / self.slide_height
+            new_height = int(self.slide_width / (aspect_width / aspect_height))
+            new_width = int(new_height * (aspect_width / aspect_height))
+
+            return (new_width, new_height)
 
 class Direction:
     HORIZONTAL = "horizontal"
