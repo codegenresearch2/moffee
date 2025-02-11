@@ -68,6 +68,11 @@ def render_jinja2(document: str, template_dir) -> str:
     pages = composite(document)
     title = extract_title(document) or "Untitled"
     slide_struct = retrieve_structure(pages)
+    options = read_options(document)
+
+    # Extract slide dimensions
+    slide_width = options.slide_width
+    slide_height = options.slide_height
 
     data = {
         "title": title,
@@ -80,6 +85,8 @@ def render_jinja2(document: str, template_dir) -> str:
                 "chunk": page.chunk,
                 "layout": page.option.layout,
                 "styles": page.option.styles,
+                "slide_width": slide_width,
+                "slide_height": slide_height,
             }
             for page in pages
         ],
