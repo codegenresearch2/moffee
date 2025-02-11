@@ -6,7 +6,7 @@ from moffee.builder import build, render_jinja2, read_options, retrieve_structur
 from moffee.compositor import composite
 
 
-def template_dir(name: str = "base") -> str:
+def template_dir(name="base"):
     return os.path.join(os.path.dirname(__file__), "..", "moffee", "templates", name)
 
 
@@ -51,7 +51,7 @@ def setup_test_env():
         yield temp_dir, doc_path, res_dir, output_dir
 
 
-def appeared(text: str, pattern: str) -> int:
+def appeared(text, pattern):
     return len(re.findall(pattern, text))
 
 
