@@ -263,8 +263,6 @@ def composite(document: str) -> List[Page]:
 
     def create_page():
         nonlocal current_page_lines, current_h1, current_h2, current_h3, options
-        # Only make new page if has non empty lines
-
         if all(l.strip() == "" for l in current_page_lines):
             return
 
@@ -289,20 +287,14 @@ def composite(document: str) -> List[Page]:
         current_h1 = current_h2 = current_h3 = None
 
     for _, line in enumerate(lines):
-        # update current env stack
         if line.strip().startswith(""):
             current_escaped = not current_escaped
 
         header_level = get_header_level(line) if not current_escaped else 0
 
-        # Check if this is a new header and not consecutive
-        # Only break at heading 1-3
-        is_downstep_header_level = (
+        if header_level > 0 and (
             prev_header_level == 0 or prev_header_level >= header_level
-        )
-        is_more_than_level_4 = prev_header_level > header_level >= 3
-        if header_level > 0 and is_downstep_header_level and not is_more_than_level_4:
-            # Check if the next line is also a header
+        ):
             create_page()
 
         if is_divider(line, type="=") and not current_escaped:
@@ -317,18 +309,14 @@ def composite(document: str) -> List[Page]:
             current_h2 = line.lstrip("#").strip()
         elif header_level == 3:
             current_h3 = line.lstrip("#").strip()
-        else:
-            pass  # Handle other cases or do nothing
 
         if header_level > 0:
             prev_header_level = header_level
         if header_level == 0 and not is_empty(line) and not contains_deco(line):
             prev_header_level = 0
 
-    # Create the last page if there's remaining content
     create_page()
 
-    # Process each page and choose titles
     env_h1 = env_h2 = env_h3 = None
     for page in pages:
         inherit_h1 = page.option.default_h1
