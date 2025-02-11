@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 import copy
 import re
 import yaml
@@ -8,29 +9,15 @@ DEFAULT_ASPECT_RATIO = "16:9"
 DEFAULT_SLIDE_WIDTH = 1280
 DEFAULT_SLIDE_HEIGHT = 720
 
-def is_empty(line: str) -> bool:
-    """
-    Check if a line is empty or contains only whitespace.
-    """
-    return line.strip() == ""
-
+@dataclass
 class PageOption:
-    def __init__(self, default_h1: bool = False, default_h2: bool = True, default_h3: bool = True, 
-                 theme: str = "default", layout: str = "content", resource_dir: str = ".", 
-                 styles: dict = None):
-        self.default_h1 = default_h1
-        self.default_h2 = default_h2
-        self.default_h3 = default_h3
-        self.theme = theme
-        self.layout = layout
-        self.resource_dir = resource_dir
-        self.styles = styles if styles is not None else {}
-
-    def copy(self):
-        """
-        Create a shallow copy of the PageOption instance.
-        """
-        return copy.copy(self)
+    default_h1: bool = False
+    default_h2: bool = True
+    default_h3: bool = True
+    theme: str = "default"
+    layout: str = "content"
+    resource_dir: str = "."
+    styles: dict = field(default_factory=dict)
 
     @property
     def aspect_ratio(self):
@@ -70,23 +57,21 @@ class Alignment:
     RIGHT = "right"
     JUSTIFY = "justify"
 
+@dataclass
 class Chunk:
-    def __init__(self, paragraph: Optional[str] = None, children: Optional[List["Chunk"]] = None, 
-                 direction: Direction = Direction.HORIZONTAL, type: Type = Type.PARAGRAPH, 
-                 alignment: Alignment = Alignment.LEFT):
-        self.paragraph = paragraph
-        self.children = children if children is not None else []
-        self.direction = direction
-        self.type = type
-        self.alignment = alignment
+    paragraph: Optional[str] = None
+    children: Optional[List["Chunk"]] = field(default_factory=list)
+    direction: Direction = Direction.HORIZONTAL
+    type: Type = Type.PARAGRAPH
+    alignment: Alignment = Alignment.LEFT
 
+@dataclass
 class Page:
-    def __init__(self, raw_md: str, option: PageOption, h1: Optional[str] = None, h2: Optional[str] = None, h3: Optional[str] = None):
-        self.raw_md = raw_md
-        self.option = option
-        self.h1 = h1
-        self.h2 = h2
-        self.h3 = h3
+    raw_md: str
+    option: PageOption
+    h1: Optional[str] = None
+    h2: Optional[str] = None
+    h3: Optional[str] = None
 
     @property
     def title(self) -> Optional[str]:
@@ -100,44 +85,17 @@ class Page:
             return self.h3
         return None
 
-    @property
-    def chunk(self) -> Chunk:
-        def split_by_div(text, type) -> List[Chunk]:
-            strs = [""]
-            current_escaped = False
-            for line in text.split("\n"):
-                if line.strip().startswith(""):
-                    current_escaped = not current_escaped
-                if is_divider(line, type) and not current_escaped:
-                    strs.append("\n")
-                else:
-                    strs[-1] += line + "\n"
-            return [Chunk(paragraph=s) for s in strs]
+def is_empty(line: str) -> bool:
+    return line.strip() == ""
 
-        vchunks = split_by_div(self.raw_md, "_")
-        for i in range(len(vchunks)):
-            hchunks = split_by_div(vchunks[i].paragraph, "*")
-            if len(hchunks) > 1:
-                vchunks[i] = Chunk(children=hchunks, type=Type.NODE)
-
-        if len(vchunks) == 1:
-            return vchunks[0]
-
-        return Chunk(children=vchunks, direction=Direction.VERTICAL, type=Type.NODE)
-
-def rm_comments(document):
-    document = re.sub(r"<!--[\s\S]*?-->", "", document)
-    document = re.sub(r"^\s*%%.*$", "", document, flags=re.MULTILINE)
-    return document.strip()
-
-def get_header_level(line):
+def get_header_level(line: str) -> int:
     match = re.match(r"^(#{1,6})\s", line)
     if match:
         return len(match.group(1))
     else:
         return 0
 
-def is_divider(line, type=None):
+def is_divider(line: str, type: str = None) -> bool:
     stripped_line = line.strip()
     if len(stripped_line) < 3:
         return False
@@ -147,8 +105,79 @@ def is_divider(line, type=None):
     assert type in "-*_", "type must be either '*', '-' or '_'"
     return all(char in type for char in stripped_line) and any(char * 3 in stripped_line for char in type)
 
-def contains_deco(line):
+def contains_deco(line: str) -> bool:
     return bool(re.match(r"^\s*@\(.*?)\s*$", line))
+
+def rm_comments(document: str) -> str:
+    document = re.sub(r"<!--[\s\S]*?-->", "", document)
+    document = re.sub(r"^\s*%%.*$", "", document, flags=re.MULTILINE)
+    return document.strip()
+
+def parse_frontmatter(document: str) -> Tuple[str, PageOption]:
+    document = document.strip()
+    front_matter = ""
+    content = document
+
+    if document.startswith("---"):
+        parts = document.split("---", 2)
+        if len(parts) >= 3:
+            front_matter = parts[1].strip()
+            content = parts[2].strip()
+
+    try:
+        yaml_data = yaml.safe_load(front_matter) if front_matter else {}
+    except yaml.YAMLError:
+        yaml_data = {}
+
+    option = PageOption(default_h1=yaml_data.get("default_h1", False),
+                        default_h2=yaml_data.get("default_h2", True),
+                        default_h3=yaml_data.get("default_h3", True),
+                        theme=yaml_data.get("theme", "default"),
+                        layout=yaml_data.get("layout", "content"),
+                        resource_dir=yaml_data.get("resource_dir", "."),
+                        styles=yaml_data.get("styles", {}))
+
+    return content, option
+
+def parse_deco(line: str, base_option: Optional[PageOption] = None) -> PageOption:
+    def rm_quotes(s: str) -> str:
+        if (s.startswith('"') and s.endswith('"')) or (
+            s.startswith("'") and s.endswith("'")
+        ):
+            return s[1:-1]
+        return s
+
+    deco_match = re.match(r"^\s*@\((.*?)\)\s*$", line)
+    if not deco_match:
+        raise ValueError(f"Input line should contain a deco, {line} received.")
+
+    deco_content = deco_match.group(1)
+    pairs = re.findall(r"([\w\-]+)\s*=\s*([^,]+)(?:,|$)", deco_content)
+    deco = {key.strip(): rm_quotes(value.strip()) for key, value in pairs}
+
+    if base_option is None:
+        base_option = PageOption()
+
+    updated_option = copy.deepcopy(base_option)
+
+    for key, value in deco.items():
+        if hasattr(updated_option, key):
+            setattr(updated_option, key, parse_value(value))
+        else:
+            updated_option.styles[key] = parse_value(value)
+
+    return updated_option
+
+def parse_value(value: str) -> Any:
+    if value.lower() == "true":
+        return True
+    elif value.lower() == "false":
+        return False
+    elif value.isdigit():
+        return int(value)
+    elif value.replace(".", "", 1).isdigit():
+        return float(value)
+    return value
 
 def composite(document: str) -> List[Page]:
     pages: List[Page] = []
@@ -168,7 +197,7 @@ def composite(document: str) -> List[Page]:
             return
 
         raw_md = ""
-        local_option = options.copy()
+        local_option = copy.deepcopy(options)
         for line in current_page_lines:
             if contains_deco(line):
                 local_option = parse_deco(line, local_option)
@@ -242,69 +271,3 @@ def composite(document: str) -> List[Page]:
             page.h3 = env_h3
 
     return pages
-
-def parse_frontmatter(document: str) -> Tuple[str, PageOption]:
-    document = document.strip()
-    front_matter = ""
-    content = document
-
-    if document.startswith("---"):
-        parts = document.split("---", 2)
-        if len(parts) >= 3:
-            front_matter = parts[1].strip()
-            content = parts[2].strip()
-
-    try:
-        yaml_data = yaml.safe_load(front_matter) if front_matter else {}
-    except yaml.YAMLError:
-        yaml_data = {}
-
-    option = PageOption(default_h1=yaml_data.get("default_h1", False),
-                        default_h2=yaml_data.get("default_h2", True),
-                        default_h3=yaml_data.get("default_h3", True),
-                        theme=yaml_data.get("theme", "default"),
-                        layout=yaml_data.get("layout", "content"),
-                        resource_dir=yaml_data.get("resource_dir", "."),
-                        styles=yaml_data.get("styles", {}))
-
-    return content, option
-
-def parse_deco(line: str, base_option: Optional[PageOption] = None) -> PageOption:
-    def rm_quotes(s):
-        if (s.startswith('"') and s.endswith('"')) or (
-            s.startswith("'") and s.endswith("'")
-        ):
-            return s[1:-1]
-        return s
-
-    deco_match = re.match(r"^\s*@\((.*?)\)\s*$", line)
-    if not deco_match:
-        raise ValueError(f"Input line should contain a deco, {line} received.")
-
-    deco_content = deco_match.group(1)
-    pairs = re.findall(r"([\w\-]+)\s*=\s*([^,]+)(?:,|$)", deco_content)
-    deco = {key.strip(): rm_quotes(value.strip()) for key, value in pairs}
-
-    if base_option is None:
-        base_option = PageOption()
-
-    updated_option = base_option.copy()
-
-    for key, value in deco.items():
-        if hasattr(updated_option, key):
-            setattr(updated_option, key, parse_value(value))
-        else:
-            updated_option.styles[key] = parse_value(value)
-
-    return updated_option
-
-def parse_value(value: str):
-    if value.lower() == "true":
-        return True
-    elif value.lower() == "false":
-        return False
-    elif value.isdigit():
-        return int(value)
-    elif value.replace(".", "", 1).isdigit():
-        return float(value)
-    return value
