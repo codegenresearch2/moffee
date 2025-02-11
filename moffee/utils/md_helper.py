@@ -34,34 +34,34 @@ def is_empty(line: str) -> bool:
     """
     return is_comment(line) or line.strip() == ""
 
-def is_divider(line: str, divider_type: Optional[str] = None) -> bool:
+def is_divider(line: str, type: Optional[str] = None) -> bool:
     """
     Determines if a given line is a Markdown divider (horizontal or vertical rule).
     Markdown dividers can be three or more hyphens, asterisks, or underscores,
     without any other characters except spaces.
 
     :param line: The line to check
-    :param divider_type: The type of divider to match, e.g., "<->" for horizontal or "*" for vertical. Defaults to None, match any type.
+    :param type: The type of divider to match, e.g., "<->" for horizontal or "*" for vertical. Defaults to None, match any type.
     :return: True if the line is a divider, False otherwise
     """
     stripped_line = line.strip()
     if len(stripped_line) < 3:
         return False
-    if divider_type is None:
-        divider_type = "-*_"
+    if type is None:
+        type = "-*_"
 
-    if divider_type == "<->":
+    if type == "<->":
         return stripped_line == "<->"
-    elif divider_type == "*":
+    elif type == "*":
         return all(char == '*' for char in stripped_line) and len(stripped_line) >= 3
-    elif divider_type == "-":
+    elif type == "-":
         return all(char == '-' for char in stripped_line) and len(stripped_line) >= 3
-    elif divider_type == "_":
+    elif type == "_":
         return all(char == '_' for char in stripped_line) and len(stripped_line) >= 3
-    elif divider_type == "=":
+    elif type == "=":
         return all(char == '=' for char in stripped_line) and len(stripped_line) >= 3
     else:
-        return any(char * 3 in stripped_line for char in divider_type)
+        return any(char * 3 in stripped_line for char in type)
 
 def contains_image(line: str) -> bool:
     """
