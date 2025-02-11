@@ -6,6 +6,7 @@ from moffee.markdown import md
 from moffee.utils.md_helper import extract_title
 from moffee.utils.file_helper import redirect_paths, copy_assets, merge_directories
 
+DEFAULT_SLIDE_DIMENSIONS = {"width": 1024, "height": 768}
 
 def read_options(document_path) -> PageOption:
     """Read frontmatter options from the document path"""
@@ -68,14 +69,10 @@ def render_jinja2(document: str, template_dir) -> str:
     pages = composite(document)
     title = extract_title(document) or "Untitled"
     slide_struct = retrieve_structure(pages)
-    _, options = parse_frontmatter(document)
-    width, height = options.computed_slide_size
 
     data = {
         "title": title,
         "struct": slide_struct,
-        "slide_width": width,
-        "slide_height": height,
         "slides": [
             {
                 "h1": page.h1,
@@ -84,6 +81,7 @@ def render_jinja2(document: str, template_dir) -> str:
                 "chunk": page.chunk,
                 "layout": page.option.layout,
                 "styles": page.option.styles,
+                **DEFAULT_SLIDE_DIMENSIONS
             }
             for page in pages
         ],
