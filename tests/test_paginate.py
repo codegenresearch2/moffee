@@ -51,7 +51,7 @@ This is line 9.
 This is line 10.
 This is line 11.
 This is line 12.
-    """
+"""
 
 
 def test_paginate_creates_correct_number_of_pages(sample_document):
@@ -81,7 +81,7 @@ Content
 More content
 ### Subheader
 Even more content
-    """
+"""
     pages = composite(doc)
     assert pages[0].h1 == "Main Title"
     assert pages[1].h1 is None
@@ -99,7 +99,7 @@ Content 1
 Content 2
 # New Header 1
 Content 3
-    """
+"""
     pages = composite(doc)
     assert len(pages) == 3
     assert pages[0].h1 == "Header 1"
@@ -114,7 +114,7 @@ Content 1
 Content 2
 ***
 Content 3
-    """
+"""
     pages = composite(doc)
     assert len(pages) == 2
 
@@ -128,7 +128,7 @@ Content 2
 
 ***
 Content 3
-    """
+"""
     pages = composite(doc)
     assert len(pages) == 1
 
@@ -141,8 +141,7 @@ Content 2
 bash
 ***
 Content 3
-
-    """
+"""
     pages = composite(doc)
     assert len(pages) == 2
     assert len(pages[1].chunk.children) == 0
@@ -156,7 +155,7 @@ def test_title_and_subtitle():
 #### Heading4
 ### Heading3
 Content
-    """
+"""
     pages = composite(doc)
     assert len(pages) == 2
     assert pages[0].title == "Title"
@@ -185,9 +184,7 @@ Paragraph 1
 Paragraph 2
 ![](image.jpg)
 Paragraph 3
-
-Paragraph 4
-    """
+"""
     pages = composite(doc)
     chunk = pages[0].chunk
     assert chunk.type == Type.PARAGRAPH
@@ -201,7 +198,7 @@ Paragraph 1
 ___
 
 Paragraph 2
-    """
+"""
     pages = composite(doc)
     chunk = pages[0].chunk
     assert chunk.type == Type.NODE
@@ -217,7 +214,7 @@ Paragraph 1
 
 Paragraph 2
 ***
-    """
+"""
     pages = composite(doc)
     chunk = pages[0].chunk
     assert chunk.type == Type.NODE
@@ -237,7 +234,7 @@ Paragraph 2
 Paragraph 3
 ***
 Paragraph 4
-    """
+"""
     pages = composite(doc)
     assert len(pages) == 2
     chunk = pages[1].chunk
@@ -257,7 +254,7 @@ def test_empty_lines_handling():
 # Title
 
 Content with empty line above
-    """
+"""
     pages = composite(doc)
     assert len(pages[0].chunk.children) == 0
     assert pages[0].option.styles == {}
