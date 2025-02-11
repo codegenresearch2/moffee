@@ -2,11 +2,12 @@ import os
 import tempfile
 import pytest
 import re
+from typing import Optional
 from moffee.builder import build, render_jinja2, read_options, retrieve_structure
 from moffee.compositor import composite
 
 
-def template_dir(name="base"):
+def template_dir(name: str = "base") -> str:
     return os.path.join(os.path.dirname(__file__), "..", "moffee", "templates", name)
 
 
@@ -24,11 +25,11 @@ Other Pages
 ![Image-1](image.png)
 ---
 Paragraph 1
-===
+___
 Paragraph 2
-<->
+***
 Paragraph 3
-<->
+***
 ![Image-2](image2.png)
     """
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -51,7 +52,7 @@ Paragraph 3
         yield temp_dir, doc_path, res_dir, output_dir
 
 
-def appeared(text, pattern):
+def appeared(text: str, pattern: str) -> int:
     return len(re.findall(pattern, text))
 
 
@@ -68,8 +69,6 @@ def test_rendering(setup_test_env):
 
 def test_read_options(setup_test_env):
     _, doc_path, _, _ = setup_test_env
-    # import ipdb; ipdb.set_trace(context=15)
-
     options = read_options(doc_path)
     assert options.default_h1 is True
     assert options.theme == "beam"
