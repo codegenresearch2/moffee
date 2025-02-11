@@ -15,9 +15,6 @@ def test_is_comment():
     """
     Determines if a given line is a Markdown comment.
     Markdown comments are in the format <!-- comment -->
-
-    :param line: The line to check
-    :return: True if the line is a comment, False otherwise
     """
     assert is_comment("<!-- This is a comment -->") is True
     assert is_comment("This is not a comment") is False
@@ -27,9 +24,6 @@ def test_is_empty():
     """
     Determines if a given line is an empty line in markdown.
     A line is empty if it is blank or comment only
-
-    :param line: The line to check
-    :return: True if the line is empty, False otherwise
     """
     assert is_empty("<!-- This is a comment -->") is True
     assert is_empty("This is not a comment") is False
@@ -39,9 +33,7 @@ def test_is_empty():
 def test_get_header_level():
     """
     Determines the header level of a given line.
-
-    :param line: The line to check
-    :return: The header level (1-6) if it's a header, 0 otherwise
+    Returns the header level (1-6) if it's a header, 0 otherwise
     """
     assert get_header_level("# Header 1") == 1
     assert get_header_level("### Header 3") == 3
@@ -52,11 +44,6 @@ def test_get_header_level():
 def test_is_divider():
     """
     Determines if a given line is a Markdown divider (horizontal rule, vertical divider, or horizontal divider).
-
-    :param line: The line to check
-    :param type: Which type to match, str. e.g. "*" to match "***" only, "<" to match "<->", "=" to match "===".
-                 Defaults to None, match any of "*", "-", "_", "<" or "=".
-    :return: True if the line is a divider, False otherwise
     """
     assert is_divider("---") is True
     assert is_divider("***") is True
@@ -68,15 +55,14 @@ def test_is_divider():
     assert is_divider("***", type="*") is True
     assert is_divider("***", type="-") is False
     assert is_divider("* * *", type="*") is False
+    assert is_divider("<->") is True
+    assert is_divider("===") is True
 
 
 def test_contains_image():
     """
     Determines if a given line contains a Markdown image.
     Markdown images are in the format ![alt text](image_url)
-
-    :param line: The line to check
-    :return: True if the line contains an image, False otherwise
     """
     assert contains_image("![Alt text](image.jpg)") is True
     assert contains_image("This is an image: ![Alt text](image.jpg)") is True
@@ -89,9 +75,6 @@ def test_contains_deco():
     """
     Determines if a given line contains a deco (custom decorator).
     Decos are in the format @(key1=value1, key2=value2, ...)
-
-    :param line: The line to check
-    :return: True if the line contains a deco, False otherwise
     """
     assert contains_deco("@(layout=split, background=blue)") is True
     assert contains_deco("  @(layout=default)  ") is True
@@ -104,9 +87,6 @@ def test_extract_title():
     """
     Extracts proper title from document.
     The title should be the first-occurred level 1 or 2 heading.
-
-    :param document: The document in markdown
-    :return: title if there is one, otherwise None
     """
     assert extract_title("# Main Title\nSome content") == "Main Title"
     assert extract_title("## Secondary Title\nSome content") == "Secondary Title"
