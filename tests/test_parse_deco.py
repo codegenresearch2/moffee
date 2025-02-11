@@ -2,34 +2,22 @@ import pytest
 from moffee.compositor import parse_deco, PageOption
 
 def test_basic_deco():
-    """
-    Test basic decoration parsing.
-    """
     line = "@(layout=split, background=blue)"
     option = parse_deco(line)
     assert option.layout == "split"
     assert option.styles == {"background": "blue"}
 
 def test_empty_deco():
-    """
-    Test parsing an empty decoration.
-    """
     line = "@()"
     option = parse_deco(line)
     assert option == PageOption()
 
 def test_invalid_deco():
-    """
-    Test handling of invalid decoration.
-    """
     line = "This is not a deco"
     with pytest.raises(ValueError, match="Invalid decoration format"):
         parse_deco(line)
 
 def test_deco_with_base_option():
-    """
-    Test updating options with a base option.
-    """
     line = "@(layout=split, default_h1=true, custom_key=value)"
     base_option = PageOption(
         layout="content", default_h1=False, default_h2=True, default_h3=True
@@ -42,9 +30,6 @@ def test_deco_with_base_option():
     assert updated_option.default_h3 is True
 
 def test_deco_with_type_conversion():
-    """
-    Test type conversion in decoration.
-    """
     line = "@(default_h1=true, default_h2=false, layout=centered, custom_int=42, custom_float=3.14)"
     base_option = PageOption()
     updated_option = parse_deco(line, base_option)
@@ -54,27 +39,18 @@ def test_deco_with_type_conversion():
     assert updated_option.layout == "centered"
 
 def test_deco_with_spaces():
-    """
-    Test decoration parsing with spaces.
-    """
     line = "@(  layout = split,   background = blue  )"
     option = parse_deco(line)
     assert option.layout == "split"
     assert option.styles == {"background": "blue"}
 
 def test_deco_with_quotes():
-    """
-    Test decoration parsing with quotes.
-    """
     line = "@(layout = \"split\",length='34px')"
     option = parse_deco(line)
     assert option.layout == "split"
     assert option.styles == {"length": "34px"}
 
 def test_deco_with_hyphen():
-    """
-    Test decoration parsing with hyphen.
-    """
     line = "@(background-color='red')"
     option = parse_deco(line)
     assert option.styles == {"background-color": "red"}
