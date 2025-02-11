@@ -22,6 +22,14 @@ class PageOption:
     layout: str = "content"
     resource_dir: str = "."
     styles: dict = field(default_factory=dict)
+    computed_slide_size: Tuple[int, int] = (720, 405)  # Default slide dimensions
+
+    def computed_slide_size(self) -> Tuple[int, int]:
+        """
+        Computes the slide size based on the aspect ratio and dimensions.
+        """
+        # Placeholder for actual computation logic
+        return self.computed_slide_size
 
 
 class Direction:
