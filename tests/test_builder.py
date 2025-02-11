@@ -2,7 +2,6 @@ import os
 import tempfile
 import pytest
 import re
-from typing import Optional
 from moffee.builder import build, render_jinja2, read_options, retrieve_structure
 from moffee.compositor import composite
 
@@ -14,23 +13,23 @@ def template_dir(name: str = "base") -> str:
 @pytest.fixture(scope="module", autouse=True)
 def setup_test_env():
     doc = """
----
-resource_dir: "resources"
-default_h1: true
-theme: beam
-background-color: 'red'
----
-# Test page
-Other Pages
-![Image-1](image.png)
----
-Paragraph 1
-___
-Paragraph 2
-***
-Paragraph 3
-***
-![Image-2](image2.png)
+    ---
+    resource_dir: "resources"
+    default_h1: true
+    theme: beam
+    background-color: 'red'
+    ---
+    # Test page
+    Other Pages
+    ![Image-1](image.png)
+    ---
+    Paragraph 1
+    ___
+    Paragraph 2
+    ***
+    Paragraph 3
+    ***
+    ![Image-2](image2.png)
     """
     with tempfile.TemporaryDirectory() as temp_dir:
         # Setup test files and directories
@@ -100,18 +99,18 @@ def test_build(setup_test_env):
 
 def test_retrieve_structure():
     doc = """
-# Title
-p0
-## Heading1
-p1
-### Subheading1
-p2
-## Heading2
-### Subheading1
-p3
-# Title2
-p4
-"""
+    # Title
+    p0
+    ## Heading1
+    p1
+    ### Subheading1
+    p2
+    ## Heading2
+    ### Subheading1
+    p3
+    # Title2
+    p4
+    """
     pages = composite(doc)
     slide_struct = retrieve_structure(pages)
     headings = slide_struct["headings"]
