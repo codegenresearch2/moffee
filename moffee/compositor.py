@@ -114,7 +114,7 @@ class Page:
         """
         Split raw_md into chunk tree
         Chunk tree branches when in-page divider is met.
-        - adjacent "==="s create chunk with vertical direction
+        - adjacent "===" create chunk with vertical direction
         - adjacent "<->" create chunk with horizontal direction
         """
 
@@ -195,11 +195,7 @@ def parse_frontmatter(document: str) -> Tuple[str, PageOption]:
 def parse_deco(line: str, base_option: Optional[PageOption] = None) -> PageOption:
     """
     Parses a deco (custom decorator) line and returns a dictionary of key-value pairs.
-    If base_option is provided, it updates the option with matching keys from the deco. Otherwise initialize an option.
-
-    :param line: The line containing the deco
-    :param base_option: Optional PageOption to update with deco values
-    :return: An updated PageOption
+    If base_option is provided, it updates the option with matching keys from the deco.
     """
 
     def parse_key_value_string(s: str) -> dict:
@@ -253,15 +249,6 @@ def parse_value(value: str):
 def composite(document: str) -> List[Page]:
     """
     Composite a markdown document into slide pages.
-
-    Splitting criteria:
-    - New h1/h2/h3 header (except when following another header)
-    - "===" Divider (for vertical chunking)
-    - "<->" Divider (for horizontal chunking)
-
-    :param document: Input markdown document as a string.
-    :param document_path: Optional string, will be used to redirect url in documents if given.
-    :return: List of Page objects representing paginated slides
     """
     pages: List[Page] = []
     current_page_lines = []
@@ -276,8 +263,6 @@ def composite(document: str) -> List[Page]:
 
     def create_page():
         nonlocal current_page_lines, current_h1, current_h2, current_h3, options
-        # Only make new page if has non empty lines
-
         if all(l.strip() == "" for l in current_page_lines):
             return
 
@@ -302,20 +287,14 @@ def composite(document: str) -> List[Page]:
         current_h1 = current_h2 = current_h3 = None
 
     for _, line in enumerate(lines):
-        # update current env stack
         if line.strip().startswith(""):
             current_escaped = not current_escaped
 
         header_level = get_header_level(line) if not current_escaped else 0
 
-        # Check if this is a new header and not consecutive
-        # Only break at heading 1-3
-        is_downstep_header_level = (
+        if header_level > 0 and (
             prev_header_level == 0 or prev_header_level >= header_level
-        )
-        is_more_than_level_4 = prev_header_level > header_level >= 3
-        if header_level > 0 and is_downstep_header_level and not is_more_than_level_4:
-            # Check if the next line is also a header
+        ):
             create_page()
 
         if is_divider(line, type="=") and not current_escaped:
@@ -330,18 +309,14 @@ def composite(document: str) -> List[Page]:
             current_h2 = line.lstrip("#").strip()
         elif header_level == 3:
             current_h3 = line.lstrip("#").strip()
-        else:
-            pass  # Handle other cases or do nothing
 
         if header_level > 0:
             prev_header_level = header_level
         if header_level == 0 and not is_empty(line) and not contains_deco(line):
             prev_header_level = 0
 
-    # Create the last page if there's remaining content
     create_page()
 
-    # Process each page and choose titles
     env_h1 = env_h2 = env_h3 = None
     for page in pages:
         inherit_h1 = page.option.default_h1
