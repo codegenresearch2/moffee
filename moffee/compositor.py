@@ -198,7 +198,7 @@ def parse_frontmatter(document: str) -> Tuple[str, PageOption]:
 def parse_deco(line: str, base_option: Optional[PageOption] = None) -> PageOption:
     """
     Parses a deco (custom decorator) line and returns a dictionary of key-value pairs.
-    If base_option is provided, it updates the option with matching keys from the deco.
+    If base_option is provided, it updates the option with matching keys from the deco. Otherwise initialize an option.
 
     :param line: The line containing the deco
     :param base_option: Optional PageOption to update with deco values
@@ -259,8 +259,7 @@ def composite(document: str) -> List[Page]:
 
     Splitting criteria:
     - New h1/h2/h3 header (except when following another header)
-    - "===" Divider (horizontal chunk)
-    - "<->" Divider (vertical chunk)
+    - "===" Divider (___, ***, +++ not count)
 
     :param document: Input markdown document as a string.
     :param document_path: Optional string, will be used to redirect url in documents if given.
@@ -321,7 +320,7 @@ def composite(document: str) -> List[Page]:
             # Check if the next line is also a header
             create_page()
 
-        if is_divider(line, type="<->") and not current_escaped:
+        if is_divider(line, type="===") and not current_escaped:
             create_page()
             continue
 
