@@ -7,11 +7,9 @@ from moffee.utils.md_helper import extract_title
 from moffee.utils.file_helper import redirect_paths, copy_assets, merge_directories
 
 
-def read_options(document_path) -> PageOption:
-    """Read frontmatter options from the document path"""
-    with open(document_path, "r") as f:
-        document = f.read()
-    _, options = parse_frontmatter(document)
+def read_options(document_content: str) -> PageOption:
+    """Read frontmatter options from the document content"""
+    _, options = parse_frontmatter(document_content)
     return options
 
 
@@ -71,8 +69,7 @@ def render_jinja2(document: str, template_dir) -> str:
     options = read_options(document)
 
     # Extract slide dimensions
-    slide_width = options.slide_width
-    slide_height = options.slide_height
+    width, height = options.computed_slide_size
 
     data = {
         "title": title,
@@ -85,8 +82,8 @@ def render_jinja2(document: str, template_dir) -> str:
                 "chunk": page.chunk,
                 "layout": page.option.layout,
                 "styles": page.option.styles,
-                "slide_width": slide_width,
-                "slide_height": slide_height,
+                "width": width,
+                "height": height,
             }
             for page in pages
         ],
@@ -99,12 +96,12 @@ def build(
     document_path: str, output_dir: str, template_dir: str, theme_dir: str = None
 ):
     """Render document, create output directories and write result html."""
-    with open(document_path) as f:
+    with open(document_path, "r") as f:
         document = f.read()
     asset_dir = os.path.join(output_dir, "assets")
 
     merge_directories(template_dir, output_dir, theme_dir)
-    options = read_options(document_path)
+    options = read_options(document)
     output_html = render_jinja2(document, output_dir)
     output_html = redirect_paths(
         output_html, document_path=document_path, resource_dir=options.resource_dir
