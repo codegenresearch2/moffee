@@ -22,12 +22,13 @@ background-color: 'red'
 # Test page
 Other Pages
 ![Image-1](image.png)
----
+
 Paragraph 1
----
+
 Paragraph 2
----
+
 Paragraph 3
+
 ![Image-2](image2.png)
     """
     with tempfile.TemporaryDirectory() as temp_dir:
