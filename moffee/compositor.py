@@ -22,6 +22,44 @@ class PageOption:
     layout: str = "content"
     resource_dir: str = "."
     styles: dict = field(default_factory=dict)
+    computed_slide_size: Tuple[int, int] = (720, 405)  # Default slide size
+
+    def computed_slide_size(self) -> Tuple[int, int]:
+        """
+        Computes the slide size based on the aspect ratio and dimensions.
+        """
+        if self.aspect_ratio and self.dimensions:
+            width, height = self.dimensions
+            aspect_ratio = self.aspect_ratio
+            if aspect_ratio == "16:9":
+                return (width, height * 9 // 16)
+            elif aspect_ratio == "4:3":
+                return (width, height * 3 // 4)
+            else:
+                raise ValueError("Unsupported aspect ratio")
+        else:
+            return self.computed_slide_size
+
+    @property
+    def aspect_ratio(self) -> Optional[str]:
+        """
+        Returns the aspect ratio from the styles.
+        """
+        return self.styles.get("aspect_ratio")
+
+    @property
+    def dimensions(self) -> Optional[Tuple[int, int]]:
+        """
+        Returns the dimensions from the styles.
+        """
+        dim = self.styles.get("dimensions")
+        if dim:
+            try:
+                width, height = map(int, dim.split("x"))
+                return (width, height)
+            except ValueError:
+                raise ValueError("Invalid dimensions format")
+        return None
 
 
 class Direction:
