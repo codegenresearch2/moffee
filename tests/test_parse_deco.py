@@ -24,20 +24,20 @@ def test_deco_with_base_option():
         layout="content", default_h1=False, default_h2=True, default_h3=True
     )
     updated_option = parse_deco(line, base_option)
-    assert updated_option.styles == {"custom_key": "value"}
     assert updated_option.layout == "split"
     assert updated_option.default_h1 is True
     assert updated_option.default_h2 is True
     assert updated_option.default_h3 is True
+    assert updated_option.styles == {"custom_key": "value"}
 
 def test_deco_with_type_conversion():
     line = "@(default_h1=true, default_h2=false, layout=centered, custom_int=42, custom_float=3.14)"
     base_option = PageOption()
     updated_option = parse_deco(line, base_option)
-    assert updated_option.styles == {"custom_int": 42, "custom_float": 3.14}
     assert updated_option.default_h1 is True
     assert updated_option.default_h2 is False
     assert updated_option.layout == "centered"
+    assert updated_option.styles == {"custom_int": 42, "custom_float": 3.14}
 
 def test_deco_with_spaces():
     line = "@(  layout = split,   background = blue  )"
