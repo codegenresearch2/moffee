@@ -1,3 +1,4 @@
+from typing import Optional, Tuple, Dict, Any
 from dataclasses import dataclass, fields
 from copy import deepcopy
 import yaml
@@ -23,7 +24,7 @@ class PageOption:
     theme: str = "default"
     layout: str = "content"
     resource_dir: str = "."
-    styles: dict = None
+    styles: Dict[str, Any] = field(default_factory=dict)
     aspect_ratio: str = DEFAULT_ASPECT_RATIO
     slide_width: int = DEFAULT_SLIDE_WIDTH
     slide_height: int = DEFAULT_SLIDE_HEIGHT
@@ -33,7 +34,7 @@ class PageOption:
             self.styles = {}
 
     @property
-    def computed_slide_size(self):
+    def computed_slide_size(self) -> Tuple[int, int]:
         """
         Computes the slide size based on the aspect ratio and dimensions.
         """
@@ -79,7 +80,7 @@ class Alignment:
 @dataclass
 class Chunk:
     paragraph: Optional[str] = None
-    children: Optional[List["Chunk"]] = field(default_factory=list)  # List of chunks
+    children: Optional[List["Chunk"]] = None
     direction: Direction = Direction.HORIZONTAL
     type: Type = Type.PARAGRAPH
     alignment: Alignment = Alignment.LEFT
@@ -118,7 +119,6 @@ class Page:
 
         :return: Root of the chunk tree
         """
-
         def split_by_div(text, type) -> List[Chunk]:
             strs = [""]
             current_escaped = False
@@ -152,7 +152,6 @@ class Page:
         - Removes headings 1-3
         - Stripes
         """
-
         lines = self.raw_md.splitlines()
         lines = [l for l in lines if not (1 <= get_header_level(l) <= 3)]
         self.raw_md = "\n".join(lines).strip()
@@ -200,7 +199,6 @@ def parse_deco(line: str, base_option: Optional[PageOption] = None) -> PageOptio
     :param base_option: Optional PageOption to update with deco values
     :return: An updated PageOption
     """
-
     def rm_quotes(s):
         if (s.startswith('"') and s.endswith('"')) or (
             s.startswith("'") and s.endswith("'")
@@ -267,7 +265,6 @@ def composite(document: str) -> List[Page]:
     def create_page():
         nonlocal current_page_lines, current_h1, current_h2, current_h3, options
         # Only make new page if has non empty lines
-
         if all(l.strip() == "" for l in current_page_lines):
             return
 
@@ -299,7 +296,6 @@ def composite(document: str) -> List[Page]:
         header_level = get_header_level(line) if not current_escaped else 0
 
         # Check if this is a new header and not consecutive
-        # Only break at heading 1-3
         is_downstep_header_level = (
             prev_header_level == 0 or prev_header_level >= header_level
         )
