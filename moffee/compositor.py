@@ -1,17 +1,11 @@
-from typing import List
-from dataclasses import dataclass, field, fields
-from typing import List, Optional, Tuple, Dict, Any
-from copy import deepcopy
-import yaml
 import re
-from moffee.utils.md_helper import (
-    get_header_level,
-    is_divider,
-    is_empty,
-    rm_comments,
-    contains_deco,
-)
+import yaml
+from dataclasses import dataclass, field
+from typing import List, Optional, Tuple, Dict
+from copy import deepcopy
 
+# Constants for default values
+DEFAULT_SLIDE_SIZE = (720, 405)
 
 @dataclass
 class PageOption:
@@ -22,23 +16,22 @@ class PageOption:
     layout: str = "content"
     resource_dir: str = "."
     styles: dict = field(default_factory=dict)
-    computed_slide_size: Tuple[int, int] = (720, 405)  # Default slide size
 
+    @property
     def computed_slide_size(self) -> Tuple[int, int]:
         """
         Computes the slide size based on the aspect ratio and dimensions.
         """
-        if self.aspect_ratio and self.dimensions:
+        aspect_ratio = self.styles.get("aspect_ratio")
+        if aspect_ratio:
             width, height = self.dimensions
-            aspect_ratio = self.aspect_ratio
             if aspect_ratio == "16:9":
                 return (width, height * 9 // 16)
             elif aspect_ratio == "4:3":
                 return (width, height * 3 // 4)
             else:
                 raise ValueError("Unsupported aspect ratio")
-        else:
-            return self.computed_slide_size
+        return DEFAULT_SLIDE_SIZE
 
     @property
     def aspect_ratio(self) -> Optional[str]:
@@ -61,23 +54,19 @@ class PageOption:
                 raise ValueError("Invalid dimensions format")
         return None
 
-
 class Direction:
     HORIZONTAL = "horizontal"
     VERTICAL = "vertical"
 
-
 class Type:
     PARAGRAPH = "paragraph"
     NODE = "node"
-
 
 class Alignment:
     LEFT = "left"
     CENTER = "center"
     RIGHT = "right"
     JUSTIFY = "justify"
-
 
 @dataclass
 class Chunk:
@@ -86,7 +75,6 @@ class Chunk:
     direction: Direction = Direction.HORIZONTAL
     type: Type = Type.PARAGRAPH
     alignment: Alignment = Alignment.LEFT
-
 
 @dataclass
 class Page:
@@ -161,7 +149,6 @@ class Page:
         lines = [l for l in lines if not (1 <= get_header_level(l) <= 3)]
         self.raw_md = "\n".join(lines).strip()
 
-
 def parse_frontmatter(document: str) -> Tuple[str, PageOption]:
     """
     Parse the YAML front matter in a given markdown document.
@@ -195,7 +182,6 @@ def parse_frontmatter(document: str) -> Tuple[str, PageOption]:
     option.styles = yaml_data
 
     return content, option
-
 
 def parse_deco(line: str, base_option: Optional[PageOption] = None) -> PageOption:
     """
@@ -235,7 +221,6 @@ def parse_deco(line: str, base_option: Optional[PageOption] = None) -> PageOptio
 
     return updated_option
 
-
 def parse_value(value: str):
     """Helper function to parse string values into appropriate types"""
     if value.lower() == "true":
@@ -247,7 +232,6 @@ def parse_value(value: str):
     elif value.replace(".", "", 1).isdigit():
         return float(value)
     return value
-
 
 def composite(document: str) -> List[Page]:
     """
@@ -364,3 +348,76 @@ def composite(document: str) -> List[Page]:
             page.h3 = env_h3
 
     return pages
+
+def get_header_level(line: str) -> int:
+    """
+    Determines the header level of a given line.
+
+    :param line: The line to check
+    :return: The header level (1-6) if it's a header, 0 otherwise
+    """
+    match = re.match(r"^(#{1,6})\s", line)
+    if match:
+        return len(match.group(1))
+    else:
+        return 0
+
+def is_divider(line: str, type: str = None) -> bool:
+    """
+    Determines if a given line is a Markdown divider (horizontal rule).
+    Markdown dividers are three or more hyphens, asterisks, or underscores,
+    without any other characters except spaces.
+
+    :param line: The line to check
+    :param type: Which type to match, str. e.g. "*" to match "***" only. Defaults to "", match any of "*", "-" and "_".
+    :return: True if the line is a divider, False otherwise
+    """
+    stripped_line = line.strip()
+    if len(stripped_line) < 3:
+        return False
+    if type is None:
+        type = "-*_"
+
+    assert type in "-*_", "type must be either '*', '-' or '_'"
+    return all(char in type for char in stripped_line) and any(
+        char * 3 in stripped_line for char in type
+    )
+
+def is_empty(line: str) -> bool:
+    """
+    Determines if a given line is an empty line in markdown.
+    A line is empty if it is blank or comment only
+
+    :param line: The line to check
+    :return: True if the line is empty, False otherwise
+    """
+    return is_comment(line) or line.strip() == ""
+
+def is_comment(line: str) -> bool:
+    """
+    Determines if a given line is a Markdown comment.
+    Markdown comments are in the format <!-- comment -->
+
+    :param line: The line to check
+    :return: True if the line is a comment, False otherwise
+    """
+    return bool(re.match(r"^\s*<!--.*-->\s*$", line))
+
+def rm_comments(document):
+    """
+    Remove comments from markdown. Supports html and "%%"
+    """
+    document = re.sub(r"<!--[\s\S]*?-->", "", document)
+    document = re.sub(r"^\s*%%.*$", "", document, flags=re.MULTILINE)
+
+    return document.strip()
+
+def contains_deco(line: str) -> bool:
+    """
+    Determines if a given line contains a deco (custom decorator).
+    Decos are in the format @(key1=value1, key2=value2, ...)
+
+    :param line: The line to check
+    :return: True if the line contains a deco, False otherwise
+    """
+    return bool(re.match(r"^\s*@\(.*?
