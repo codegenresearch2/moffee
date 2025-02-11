@@ -1,7 +1,6 @@
 import re
 from typing import Optional
 
-
 def is_comment(line: str) -> bool:
     """
     Determines if a given line is a Markdown comment.
@@ -11,7 +10,6 @@ def is_comment(line: str) -> bool:
     :return: True if the line is a comment, False otherwise
     """
     return bool(re.match(r"^\s*<!--.*-->\s*$", line))
-
 
 def get_header_level(line: str) -> int:
     """
@@ -26,7 +24,6 @@ def get_header_level(line: str) -> int:
     else:
         return 0
 
-
 def is_empty(line: str) -> bool:
     """
     Determines if a given line is an empty line in markdown.
@@ -37,28 +34,27 @@ def is_empty(line: str) -> bool:
     """
     return is_comment(line) or line.strip() == ""
 
-
-def is_divider(line: str, type=None) -> bool:
+def is_divider(line: str, type: Optional[str] = None) -> bool:
     """
     Determines if a given line is a Markdown divider (horizontal rule).
     Markdown dividers are three or more hyphens, asterisks, or underscores,
     without any other characters except spaces.
 
     :param line: The line to check
-    :param type: Which type to match, str. e.g. "*" to match "***" only. Defaults to "", match any of "*", "-" and "_".
+    :param type: The specific type of divider to match, defaults to None
     :return: True if the line is a divider, False otherwise
     """
     stripped_line = line.strip()
     if len(stripped_line) < 3:
         return False
+    
     if type is None:
         type = "-*_"
-
+    
     assert type in "-*_", "type must be either '*', '-' or '_'"
-    return all(char in type for char in stripped_line) and any(
-        char * 3 in stripped_line for char in type
-    )
-
+    
+    dividers = [char * 3 for char in type]
+    return any(divider in stripped_line for divider in dividers)
 
 def contains_image(line: str) -> bool:
     """
@@ -70,7 +66,6 @@ def contains_image(line: str) -> bool:
     """
     return bool(re.search(r"!\[.*?\]\(.*?\)", line))
 
-
 def contains_deco(line: str) -> bool:
     """
     Determines if a given line contains a deco (custom decorator).
@@ -80,7 +75,6 @@ def contains_deco(line: str) -> bool:
     :return: True if the line contains a deco, False otherwise
     """
     return bool(re.match(r"^\s*@\(.*?\)\s*$", line))
-
 
 def extract_title(document: str) -> Optional[str]:
     """
@@ -97,7 +91,6 @@ def extract_title(document: str) -> Optional[str]:
         return match.group(2).strip()
     else:
         return None
-
 
 def rm_comments(document):
     """
