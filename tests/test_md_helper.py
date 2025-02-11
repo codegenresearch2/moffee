@@ -12,7 +12,7 @@ from moffee.utils.md_helper import (
 
 # Helper function to clean up markdown text for comparison
 def multi_strip(text):
-    return text.strip().replace("\n", "").replace(" ", "")
+    return "\n".join([t.strip() for t in text.split("\n") if t.strip() != ""])
 
 # Test functions
 
