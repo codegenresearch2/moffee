@@ -50,18 +50,18 @@ def is_divider(line: str, type: Optional[str] = None) -> bool:
     if type is None:
         type = "-*_"
 
-    if type == "<->":
-        return stripped_line == "<->"
-    elif type == "*":
-        return all(char == '*' for char in stripped_line) and len(stripped_line) >= 3
-    elif type == "-":
-        return all(char == '-' for char in stripped_line) and len(stripped_line) >= 3
-    elif type == "_":
-        return all(char == '_' for char in stripped_line) and len(stripped_line) >= 3
-    elif type == "=":
-        return all(char == '=' for char in stripped_line) and len(stripped_line) >= 3
-    else:
-        return any(char * 3 in stripped_line for char in type)
+    divider_patterns = {
+        "<->": r"^<->$",
+        "*": r"^[*]{3,}$",
+        "-": r"^[-]{3,}$",
+        "_": r"^[_]{3,}$",
+        "=": r"^[=]{3,}$",
+    }
+
+    for divider_type, pattern in divider_patterns.items():
+        if type == divider_type and re.match(pattern, stripped_line):
+            return True
+    return False
 
 def contains_image(line: str) -> bool:
     """
