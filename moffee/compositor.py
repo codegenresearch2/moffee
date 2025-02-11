@@ -1,7 +1,7 @@
 from typing import List, Optional, Tuple, Dict, Any
 import yaml
 import re
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, fields, field
 from copy import deepcopy
 
 # Constants for default values
@@ -18,6 +18,9 @@ class PageOption:
     layout: str = "content"
     resource_dir: str = "."
     styles: dict = field(default_factory=dict)
+
+    def __post_init__(self):
+        self.styles = deepcopy(self.styles)
 
     @property
     def aspect_ratio(self):
@@ -57,7 +60,7 @@ class Alignment:
 @dataclass
 class Chunk:
     paragraph: Optional[str] = None
-    children: List["Chunk"] = field(default_factory=list)
+    children: Optional[List["Chunk"]] = field(default_factory=list)
     direction: Direction = Direction.HORIZONTAL
     type: Type = Type.PARAGRAPH
     alignment: Alignment = Alignment.LEFT
@@ -159,7 +162,7 @@ def parse_deco(line: str, base_option: Optional[PageOption] = None) -> PageOptio
     if base_option is None:
         base_option = PageOption()
 
-    updated_option = base_option.copy()
+    updated_option = deepcopy(base_option)
 
     for key, value in deco.items():
         if hasattr(updated_option, key):
