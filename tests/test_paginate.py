@@ -1,87 +1,29 @@
+from typing import List, Tuple, Optional
 import pytest
-from moffee.compositor import composite, Direction, Type
-
+from moffee.compositor import composite, Direction, Type, PageOption
 
 @pytest.fixture
-def sample_document():
-    return """
----
-background-color: gray
-layout: split
-default_h1: true
-default_h2: false
----
-# Main Title
+def sample_document() -> str:
+    return """\n---\nbackground-color: gray\nlayout: split\ndefault_h1: true\ndefault_h2: false\n---\n# Main Title\n\n## Subtitle\n\nContent of the first slide.\n\n---\n@(background-color=yellow)\n## Second Slide\n\n- Bullet point 1\n- Bullet point 2\n\n### Subheader\nMore content.\n![](Image.png)\n\n## Another Header\n### Consecutive Header\n\nNormal text here.\n\n# New Main Title\n\n1. Numbered list\n2. Second item\n3. Third item\n\nThis is a long paragraph\nIt continues for several lines to demonstrate the line count limit.\nWe'll add more lines to ensure it goes over the 12 non-empty lines limit.\nThis is line 4.\nThis is line 5.\nThis is line 6.\nThis is line 7.\nThis is line 8.\nThis is line 9.\nThis is line 10.\nThis is line 11.\nThis is line 12.\n    """
 
-## Subtitle
-
-Content of the first slide.
-
----
-@(background-color=yellow)
-## Second Slide
-
-- Bullet point 1
-- Bullet point 2
-
-### Subheader
-More content.
-![](Image.png)
-
-## Another Header
-### Consecutive Header
-
-Normal text here.
-
-# New Main Title
-
-1. Numbered list
-2. Second item
-3. Third item
-
-This is a long paragraph
-It continues for several lines to demonstrate the line count limit.
-We'll add more lines to ensure it goes over the 12 non-empty lines limit.
-This is line 4.
-This is line 5.
-This is line 6.
-This is line 7.
-This is line 8.
-This is line 9.
-This is line 10.
-This is line 11.
-This is line 12.
-    """
-
-
-def test_paginate_creates_correct_number_of_pages(sample_document):
+def test_paginate_creates_correct_number_of_pages(sample_document: str):
     pages = composite(sample_document)
     assert len(pages) > 1, "Pagination should create multiple pages"
 
-
-def test_frontmatter_parsing(sample_document):
+def test_frontmatter_parsing(sample_document: str):
     pages = composite(sample_document)
     assert pages[0].option.layout == "split"
     assert pages[0].option.default_h1 is True
     assert pages[0].option.default_h2 is False
     assert pages[0].option.styles == {"background-color": "gray"}
 
-
-def test_style_overwrite(sample_document):
+def test_style_overwrite(sample_document: str):
     pages = composite(sample_document)
     assert pages[1].option.styles == {"background-color": "yellow"}
     assert pages[0].option.styles == {"background-color": "gray"}
 
-
 def test_header_inheritance():
-    doc = """
-# Main Title
-Content
-## Subtitle
-More content
-### Subheader
-Even more content
-    """
+    doc = """\n# Main Title\nContent\n## Subtitle\nMore content\n### Subheader\nEven more content\n    """
     pages = composite(doc)
     assert pages[0].h1 == "Main Title"
     assert pages[1].h1 is None
@@ -90,118 +32,55 @@ Even more content
     assert pages[2].h2 == "Subtitle"
     assert pages[2].h3 == "Subheader"
 
-
 def test_page_splitting_on_headers():
-    doc = """
-# Header 1
-Content 1
-## Header 2
-Content 2
-# New Header 1
-Content 3
-    """
+    doc = """\n# Header 1\nContent 1\n## Header 2\nContent 2\n# New Header 1\nContent 3\n    """
     pages = composite(doc)
     assert len(pages) == 3
     assert pages[0].h1 == "Header 1"
     assert pages[1].h2 == "Header 2"
     assert pages[2].h1 == "New Header 1"
 
-
 def test_page_splitting_on_dividers():
-    doc = """
-Content 1
----
-Content 2
-<->
-Content 3
-    """
+    doc = """\nContent 1\n---\nContent 2\n***\nContent 3\n    """
     pages = composite(doc)
     assert len(pages) == 2
 
-
 def test_escaped_area_paging():
-    doc = """
-Content 1
-```bash
----
-Content 2
-```
-<->
-Content 3
-    """
+    doc = """\nContent 1\nbash\n---\nContent 2\n\n***\nContent 3\n    """
     pages = composite(doc)
     assert len(pages) == 1
 
-
 def test_escaped_area_chunking():
-    doc = """
-Content 1
----
-Content 2
-```bash
-<->
-Content 3
-```
-    """
+    doc = """\nContent 1\n---\nContent 2\nbash\n***\nContent 3\n\n    """
     pages = composite(doc)
     assert len(pages) == 2
     assert len(pages[1].chunk.children) == 0
 
-
 def test_title_and_subtitle():
-    doc = """
-# Title
-## Subtitle
-# Title2
-#### Heading4
-### Heading3
-Content
-    """
+    doc = """\n# Title\n## Subtitle\n# Title2\n#### Heading4\n### Heading3\nContent\n    """
     pages = composite(doc)
     assert len(pages) == 2
     assert pages[0].title == "Title"
     assert pages[0].subtitle == "Subtitle"
     assert pages[1].title == "Title2"
 
-
 def test_adjacent_headings_same_level():
-    doc = """
-# Title
-## Subtitle
-## Subtitle2
-### Heading
-### Heading2
-"""
+    doc = """\n# Title\n## Subtitle\n## Subtitle2\n### Heading\n### Heading2\n"""
     pages = composite(doc)
     assert len(pages) == 3
     assert pages[1].title == "Subtitle2"
     assert pages[1].subtitle == "Heading"
 
-
 def test_chunking_trivial():
-    doc = """
-Paragraph 1
-
-Paragraph 2
-![](image.jpg)
-Paragraph 3
-
-Paragraph 4
-    """
+    doc = """\nParagraph 1\n\nParagraph 2\n![](image.jpg)\nParagraph 3\n\nParagraph 4\n    """
     pages = composite(doc)
     chunk = pages[0].chunk
     assert chunk.type == Type.PARAGRAPH
     assert len(chunk.children) == 0
     assert chunk.paragraph.strip() == doc.strip()
 
-
 def test_chunking_vertical():
-    doc = """
-Paragraph 1
-===
-
-Paragraph 2
-    """
+    doc = """\nParagraph 1\n___\n\nParagraph 2\n    """
     pages = composite(doc)
     chunk = pages[0].chunk
     assert chunk.type == Type.NODE
@@ -209,15 +88,8 @@ Paragraph 2
     assert chunk.direction == Direction.VERTICAL
     assert chunk.children[0].type == Type.PARAGRAPH
 
-
 def test_chunking_horizontal():
-    doc = """
-Paragraph 1
-<->
-
-Paragraph 2
-<->
-    """
+    doc = """\nParagraph 1\n***\n\nParagraph 2\n***\n    """
     pages = composite(doc)
     chunk = pages[0].chunk
     assert chunk.type == Type.NODE
@@ -225,19 +97,8 @@ Paragraph 2
     assert chunk.direction == Direction.HORIZONTAL
     assert chunk.children[0].type == Type.PARAGRAPH
 
-
 def test_chunking_hybrid():
-    doc = """
-Other Pages
----
-Paragraph 1
-===
-Paragraph 2
-<->
-Paragraph 3
-<->
-Paragraph 4
-    """
+    doc = """\nOther Pages\n---\nParagraph 1\n___\nParagraph 2\n***\nParagraph 3\n***\nParagraph 4\n    """
     pages = composite(doc)
     assert len(pages) == 2
     chunk = pages[1].chunk
@@ -251,46 +112,21 @@ Paragraph 4
     assert next.direction == Direction.HORIZONTAL
     assert len(next.children) == 3
 
-
 def test_empty_lines_handling():
-    doc = """
-# Title
-
-Content with empty line above
-    """
+    doc = """\n# Title\n\nContent with empty line above\n    """
     pages = composite(doc)
     assert len(pages[0].chunk.children) == 0
     assert pages[0].option.styles == {}
 
-
 def test_deco_handling():
-    doc = """
----
-default_h1: true
----
-# Title
-@(default_h1=false)
-Hello
-@(background=blue)
-"""
+    doc = """\n---\ndefault_h1: true\n---\n# Title\n@(default_h1=false)\nHello\n@(background=blue)\n"""
     pages = composite(doc)
     assert pages[0].raw_md == "Hello"
     assert pages[0].option.default_h1 is False
     assert pages[0].option.styles == {"background": "blue"}
 
-
 def test_multiple_deco():
-    doc = """
----
-default_h1: true
----
-# Title1
-@(background=blue)
-## Title2
-# Title
-@(default_h1=false)
-Hello
-"""
+    doc = """\n---\ndefault_h1: true\n---\n# Title1\n@(background=blue)\n## Title2\n# Title\n@(default_h1=false)\nHello\n"""
     pages = composite(doc)
     assert len(pages) == 2
     assert pages[0].raw_md == ""
@@ -300,6 +136,24 @@ Hello
     assert pages[0].option.default_h1 is True
     assert pages[1].option.default_h1 is False
 
+def test_divider_matching():
+    doc = """\nParagraph 1\n---\nParagraph 2\n***\nParagraph 3\n===\nParagraph 4\n    """
+    pages = composite(doc)
+    assert len(pages) == 2
+    chunk = pages[0].chunk
+    assert chunk.type == Type.NODE
+    assert len(chunk.children) == 2
+    assert chunk.direction == Direction.VERTICAL
+    assert chunk.children[0].type == Type.PARAGRAPH
+    assert chunk.children[1].type == Type.NODE
+    assert chunk.children[1].direction == Direction.HORIZONTAL
+    assert len(chunk.children[1].children) == 2
 
-if __name__ == "__main__":
-    pytest.main()
+def test_divider_matching_in_escaped_area():
+    doc = """\nParagraph 1\n---\nParagraph 2\nbash\n***\n===\n\nParagraph 3\n    """
+    pages = composite(doc)
+    assert len(pages) == 1
+    chunk = pages[0].chunk
+    assert chunk.type == Type.PARAGRAPH
+    assert len(chunk.children) == 0
+    assert chunk.paragraph.strip() == doc.strip()
