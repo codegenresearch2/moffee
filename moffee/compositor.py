@@ -111,21 +111,13 @@ class Page:
 
     @property
     def chunk(self) -> Chunk:
-        """
-        Split raw_md into chunk tree
-        Chunk tree branches when in-page divider is met.
-        - adjacent "<->"s create chunk with horizontal direction
-        - adjacent "===" create chunk with vertical direction
-        "===" possesses higher priority than "<->"
-
-        :return: Root of the chunk tree
-        """
+        """\n        Split raw_md into chunk tree\n        Chunk tree branches when in-page divider is met.\n        - adjacent "***"s create chunk with horizontal direction\n        - adjacent "___" create chunk with vertical direction\n        "___" possesses higher priority than "***"\n\n        :return: Root of the chunk tree\n        """
 
         def split_by_div(text, type) -> List[Chunk]:
             strs = [""]
             current_escaped = False
             for line in text.split("\n"):
-                if line.strip().startswith("```"):
+                if line.strip().startswith(""):
                     current_escaped = not current_escaped
                 if is_divider(line, type) and not current_escaped:
                     strs.append("\n")
@@ -133,12 +125,12 @@ class Page:
                     strs[-1] += line + "\n"
             return [Chunk(paragraph=s) for s in strs]
 
-        # collect "==="
-        vchunks = split_by_div(self.raw_md, "=")
-        # split by "<->" if possible
+        # collect "___"
+        vchunks = split_by_div(self.raw_md, "_")
+        # split by "***" if possible
         for i in range(len(vchunks)):
-            hchunks = split_by_div(vchunks[i].paragraph, "<")
-            if len(hchunks) > 1:  # found <->
+            hchunks = split_by_div(vchunks[i].paragraph, "*")
+            if len(hchunks) > 1:  # found ***
                 vchunks[i] = Chunk(children=hchunks, type=Type.NODE)
 
         if len(vchunks) == 1:
@@ -147,13 +139,7 @@ class Page:
         return Chunk(children=vchunks, direction=Direction.VERTICAL, type=Type.NODE)
 
     def _preprocess(self):
-        """
-        Additional processing needed for the page.
-        Modifies raw_md in place.
-
-        - Removes headings 1-3
-        - Stripes
-        """
+        """\n        Additional processing needed for the page.\n        Modifies raw_md in place.\n\n        - Removes headings 1-3\n        - Stripes\n        """
 
         lines = self.raw_md.splitlines()
         lines = [l for l in lines if not (1 <= get_header_level(l) <= 3)]
@@ -161,12 +147,7 @@ class Page:
 
 
 def parse_frontmatter(document: str) -> Tuple[str, PageOption]:
-    """
-    Parse the YAML front matter in a given markdown document.
-
-    :param document: Input markdown document as a string.
-    :return: A tuple containing the document with front matter removed and the PageOption.
-    """
+    """\n    Parse the YAML front matter in a given markdown document.\n\n    :param document: Input markdown document as a string.\n    :return: A tuple containing the document with front matter removed and the PageOption.\n    """
     document = document.strip()
     front_matter = ""
     content = document
@@ -196,14 +177,7 @@ def parse_frontmatter(document: str) -> Tuple[str, PageOption]:
 
 
 def parse_deco(line: str, base_option: Optional[PageOption] = None) -> PageOption:
-    """
-    Parses a deco (custom decorator) line and returns a dictionary of key-value pairs.
-    If base_option is provided, it updates the option with matching keys from the deco. Otherwise initialize an option.
-
-    :param line: The line containing the deco
-    :param base_option: Optional PageOption to update with deco values
-    :return: An updated PageOption
-    """
+    """\n    Parses a deco (custom decorator) line and returns a dictionary of key-value pairs.\n    If base_option is provided, it updates the option with matching keys from the deco. Otherwise initialize an option.\n\n    :param line: The line containing the deco\n    :param base_option: Optional PageOption to update with deco values\n    :return: An updated PageOption\n    """
 
     def parse_key_value_string(s: str) -> dict:
         pattern = r'([\w-]+)\s*=\s*((?:"(?:[^"\\]|\\.)*"|\'(?:[^\'\\]|\\.)*\'|[^,]+))'
@@ -254,17 +228,7 @@ def parse_value(value: str):
 
 
 def composite(document: str) -> List[Page]:
-    """
-    Composite a markdown document into slide pages.
-
-    Splitting criteria:
-    - New h1/h2/h3 header (except when following another header)
-    - "---" Divider (===, <->, +++ not count)
-
-    :param document: Input markdown document as a string.
-    :param document_path: Optional string, will be used to redirect url in documents if given.
-    :return: List of Page objects representing paginated slides
-    """
+    """\n    Composite a markdown document into slide pages.\n\n    Splitting criteria:\n    - New h1/h2/h3 header (except when following another header)\n    - "---" Divider (___, ***, +++ not count)\n\n    :param document: Input markdown document as a string.\n    :param document_path: Optional string, will be used to redirect url in documents if given.\n    :return: List of Page objects representing paginated slides\n    """
     pages: List[Page] = []
     current_page_lines = []
     current_escaped = False  # track whether in code area
@@ -305,7 +269,7 @@ def composite(document: str) -> List[Page]:
 
     for _, line in enumerate(lines):
         # update current env stack
-        if line.strip().startswith("```"):
+        if line.strip().startswith(""):
             current_escaped = not current_escaped
 
         header_level = get_header_level(line) if not current_escaped else 0
@@ -340,31 +304,4 @@ def composite(document: str) -> List[Page]:
         if header_level == 0 and not is_empty(line) and not contains_deco(line):
             prev_header_level = 0
 
-    # Create the last page if there's remaining content
-    create_page()
-
-    # Process each page and choose titles
-    env_h1 = env_h2 = env_h3 = None
-    for page in pages:
-        inherit_h1 = page.option.default_h1
-        inherit_h2 = page.option.default_h2
-        inherit_h3 = page.option.default_h3
-        if page.h1 is not None:
-            env_h1 = page.h1
-            env_h2 = env_h3 = None
-            inherit_h1 = inherit_h2 = inherit_h3 = False
-        if page.h2 is not None:
-            env_h2 = page.h2
-            env_h3 = None
-            inherit_h2 = inherit_h3 = False
-        if page.h3 is not None:
-            env_h3 = page.h3
-            inherit_h3 = False
-        if inherit_h1:
-            page.h1 = env_h1
-        if inherit_h2:
-            page.h2 = env_h2
-        if inherit_h3:
-            page.h3 = env_h3
-
-    return pages
+    # Create the last page if there's remaining content\n    create_page()\n\n    # Process each page and choose titles\n    env_h1 = env_h2 = env_h3 = None\n    for page in pages:\n        inherit_h1 = page.option.default_h1\n        inherit_h2 = page.option.default_h2\n        inherit_h3 = page.option.default_h3\n        if page.h1 is not None:\n            env_h1 = page.h1\n            env_h2 = env_h3 = None\n            inherit_h1 = inherit_h2 = inherit_h3 = False\n        if page.h2 is not None:\n            env_h2 = page.h2\n            env_h3 = None\n            inherit_h2 = inherit_h3 = False\n        if page.h3 is not None:\n            env_h3 = page.h3\n            inherit_h3 = False\n        if inherit_h1:\n            page.h1 = env_h1\n        if inherit_h2:\n            page.h2 = env_h2\n        if inherit_h3:\n            page.h3 = env_h3\n\n    return pages
